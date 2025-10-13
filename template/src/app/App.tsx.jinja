@@ -1,0 +1,42 @@
+import { Routes, Route } from 'react-router-dom'
+{% if use_azure_auth -%}
+import { useIsAuthenticated } from '@azure/msal-react'
+import { LoginPage } from './pages/LoginPage'
+import { ProtectedRoute } from './components/ProtectedRoute'
+{%- endif %}
+import { HomePage } from './pages/HomePage'
+
+function App() {
+  {% if use_azure_auth -%}
+  const isAuthenticated = useIsAuthenticated()
+  const devNoAuth = (window as any).__ENV__?.APP_DEV_NO_AUTH === 'true'
+  
+  // In development, bypass auth if configured
+  if (devNoAuth && !isAuthenticated) {
+    console.warn('⚠️  Dev mode: Authentication bypassed (APP_DEV_NO_AUTH=true)')
+  }
+  {%- endif %}
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Routes>
+        {% if use_azure_auth -%}
+        <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <HomePage />
+            </ProtectedRoute>
+          }
+        />
+        {%- else -%}
+        <Route path="/" element={<HomePage />} />
+        {%- endif %}
+      </Routes>
+    </div>
+  )
+}
+
+export default App
+

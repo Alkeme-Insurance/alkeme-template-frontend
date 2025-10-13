@@ -1,0 +1,69 @@
+# Nginx configuration for {{ project_name }}
+# SPA routing + runtime env injection + caching + healthcheck
+
+server {
+    listen 80;
+    server_name _;
+    
+    root /usr/share/nginx/html;
+    index index.html;
+    
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    
+    # Enable gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css text/xml text/javascript 
+               application/x-javascript application/xml+rss 
+               application/json application/javascript;
+    
+    # Health check endpoint (for container orchestration)
+    location = /health {
+        access_log off;
+        add_header Content-Type text/plain;
+        return 200 "ok\n";
+    }
+    
+    # Runtime environment variables (injected by entrypoint.sh)
+    # Never cache this file - it may change between container restarts
+    location = /env.js {
+        add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0";
+        add_header Pragma "no-cache";
+        add_header Expires "0";
+        try_files /env.js =404;
+    }
+    
+    # Static assets with versioned filenames (Vite generates hashed names)
+    # Long-term caching for immutable assets
+    location ~* ^/assets/.+\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$ {
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        try_files $uri =404;
+    }
+    
+    # Other static files (images, fonts, etc.)
+    location ~* \.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|webp)$ {
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        try_files $uri =404;
+    }
+    
+    # SPA fallback - serve index.html for all routes
+    # This enables client-side routing (React Router)
+    location / {
+        try_files $uri $uri/ /index.html;
+        
+        # Don't cache HTML files
+        add_header Cache-Control "no-cache, must-revalidate";
+    }
+    
+    # Error pages
+    error_page 404 /index.html;
+    error_page 500 502 503 504 /50x.html;
+    location = /50x.html {
+        root /usr/share/nginx/html;
+    }
+}
+

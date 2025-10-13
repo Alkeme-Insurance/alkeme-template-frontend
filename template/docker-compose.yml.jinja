@@ -1,0 +1,82 @@
+version: "3.9"
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: {{ package_name }}:latest
+    container_name: {{ package_name }}
+    
+    # Runtime environment variables (injected into /env.js by entrypoint.sh)
+    # These are PUBLIC variables exposed to the browser - never put secrets here
+    environment:
+      APP_API_BASE_URL: ${APP_API_BASE_URL:-http://localhost:8000}
+      {% if use_azure_auth -%}
+      APP_AZURE_CLIENT_ID: ${APP_AZURE_CLIENT_ID:-your-client-id}
+      APP_AZURE_TENANT_ID: ${APP_AZURE_TENANT_ID:-your-tenant-id}
+      APP_AZURE_API_SCOPE: ${APP_AZURE_API_SCOPE:-api://your-app-id/access_as_user}
+      {%- endif %}
+      APP_DEV_NO_AUTH: ${APP_DEV_NO_AUTH:-true}
+      APP_ENVIRONMENT: ${APP_ENVIRONMENT:-development}
+    
+    # Port mapping (host:container)
+    ports:
+      - "${FRONTEND_PORT:-{{ docker_port }}}:80"
+    
+    # Health check configuration
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    
+    # Restart policy
+    restart: unless-stopped
+    
+    # Optional: connect to backend service
+    # depends_on:
+    #   - backend
+    
+    # Optional: custom network
+    # networks:
+    #   - app-network
+
+  # Uncomment and configure when adding a backend service
+  # backend:
+  #   image: your-backend-image:latest
+  #   container_name: {{ package_name }}-backend
+  #   environment:
+  #     MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017/{{ package_name }}}
+  #     API_SECRET_KEY: ${API_SECRET_KEY}
+  #   ports:
+  #     - "${BACKEND_PORT:-8000}:8000"
+  #   depends_on:
+  #     - mongo
+  #   networks:
+  #     - app-network
+
+  # Uncomment when adding a database
+  # mongo:
+  #   image: mongo:7
+  #   container_name: {{ package_name }}-mongo
+  #   environment:
+  #     MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-admin}
+  #     MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-password}
+  #   ports:
+  #     - "${MONGO_PORT:-27017}:27017"
+  #   volumes:
+  #     - mongo-data:/data/db
+  #   networks:
+  #     - app-network
+
+# Uncomment when using custom networks
+# networks:
+#   app-network:
+#     driver: bridge
+
+# Uncomment when using persistent volumes
+# volumes:
+#   mongo-data:
+

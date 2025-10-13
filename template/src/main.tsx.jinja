@@ -1,0 +1,51 @@
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+{% if use_azure_auth -%}
+import { MsalProvider } from '@azure/msal-react'
+import { msalInstance } from './auth/msalConfig'
+{%- endif %}
+
+import App from './app/App'
+import './styles/index.css'
+
+// Create React Query client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+})
+
+// Get root element
+const rootElement = document.getElementById('root')
+
+if (!rootElement) {
+  throw new Error('Failed to find the root element')
+}
+
+// Render application
+ReactDOM.createRoot(rootElement).render(
+  <React.StrictMode>
+    {% if use_azure_auth -%}
+    <MsalProvider instance={msalInstance}>
+      <BrowserRouter>
+        <QueryClientProvider client={queryClient}>
+          <App />
+        </QueryClientProvider>
+      </BrowserRouter>
+    </MsalProvider>
+    {%- else -%}
+    <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>
+    </BrowserRouter>
+    {%- endif %}
+  </React.StrictMode>
+)
+

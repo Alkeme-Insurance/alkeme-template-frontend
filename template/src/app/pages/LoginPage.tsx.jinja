@@ -1,0 +1,52 @@
+{% if use_azure_auth -%}
+import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useIsAuthenticated } from '@azure/msal-react'
+import { loginWithRedirect } from '../../auth/msalConfig'
+
+export function LoginPage() {
+  const navigate = useNavigate()
+  const isAuthenticated = useIsAuthenticated()
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/', { replace: true })
+    }
+  }, [isAuthenticated, navigate])
+
+  const handleLogin = async () => {
+    try {
+      await loginWithRedirect()
+    } catch (error) {
+      console.error('Login failed:', error)
+    }
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            {{ project_name }}
+          </h1>
+          <p className="text-gray-600">
+            Sign in to continue
+          </p>
+        </div>
+
+        <button
+          onClick={handleLogin}
+          className="w-full px-6 py-3 text-white bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-colors"
+        >
+          Sign in with Microsoft
+        </button>
+
+        <p className="mt-6 text-center text-sm text-gray-600">
+          Powered by Azure Active Directory
+        </p>
+      </div>
+    </div>
+  )
+}
+{%- endif %}
+

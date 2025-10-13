@@ -1,0 +1,140 @@
+import { Link } from 'react-router-dom'
+{% if use_azure_auth -%}
+import { useIsAuthenticated } from '@azure/msal-react'
+import { getCurrentUser, logout } from '../../auth/msalConfig'
+{%- endif %}
+
+export function HomePage() {
+  {% if use_azure_auth -%}
+  const isAuthenticated = useIsAuthenticated()
+  const user = getCurrentUser()
+  
+  const handleLogout = async () => {
+    try {
+      await logout()
+    } catch (error) {
+      console.error('Logout failed:', error)
+    }
+  }
+  {%- endif %}
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      {/* Header */}
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-gray-900">
+              {{ project_name }}
+            </h1>
+            
+            {% if use_azure_auth -%}
+            {isAuthenticated && user && (
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-600">
+                  {user.name || user.username}
+                </span>
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
+                >
+                  Logout
+                </button>
+              </div>
+            )}
+            {%- endif %}
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-extrabold text-gray-900 sm:text-5xl">
+            Welcome to {{ project_name }}
+          </h2>
+          <p className="mt-4 text-xl text-gray-600">
+            {{ project_description }}
+          </p>
+        </div>
+
+        {/* Feature Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="p-6 bg-white rounded-lg shadow-md">
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              🚀 Production Ready
+            </h3>
+            <p className="text-gray-600">
+              Built with React, TypeScript, Tailwind CSS, and Docker
+            </p>
+          </div>
+          
+          <div className="p-6 bg-white rounded-lg shadow-md">
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              ⚡ Runtime Configuration
+            </h3>
+            <p className="text-gray-600">
+              No rebuild needed - change .env and restart
+            </p>
+          </div>
+          
+          <div className="p-6 bg-white rounded-lg shadow-md">
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              🔐 Secure by Default
+            </h3>
+            <p className="text-gray-600">
+              Azure AD authentication and secret scanning
+            </p>
+          </div>
+        </div>
+
+        {/* Environment Info */}
+        <div className="mt-12 p-6 bg-white rounded-lg shadow-md">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            🔧 Environment Configuration
+          </h3>
+          <dl className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+              <dt className="font-medium text-gray-700">API Base URL:</dt>
+              <dd className="text-gray-600 mt-1 font-mono text-xs">
+                {(window as any).__ENV__?.APP_API_BASE_URL || 'Not configured'}
+              </dd>
+            </div>
+            <div>
+              <dt className="font-medium text-gray-700">Environment:</dt>
+              <dd className="text-gray-600 mt-1 font-mono text-xs">
+                {(window as any).__ENV__?.APP_ENVIRONMENT || 'development'}
+              </dd>
+            </div>
+            {% if use_azure_auth -%}
+            <div>
+              <dt className="font-medium text-gray-700">Azure Client ID:</dt>
+              <dd className="text-gray-600 mt-1 font-mono text-xs">
+                {(window as any).__ENV__?.APP_AZURE_CLIENT_ID || 'Not configured'}
+              </dd>
+            </div>
+            <div>
+              <dt className="font-medium text-gray-700">Dev No Auth:</dt>
+              <dd className="text-gray-600 mt-1 font-mono text-xs">
+                {(window as any).__ENV__?.APP_DEV_NO_AUTH || 'false'}
+              </dd>
+            </div>
+            {%- endif %}
+          </dl>
+          <p className="mt-4 text-xs text-gray-500">
+            💡 Tip: These values are injected at runtime from your .env file.
+            No rebuild needed to change configuration!
+          </p>
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="mt-12 py-6 text-center text-sm text-gray-600">
+        <p>
+          Built by {{ author_name }} with ❤️
+        </p>
+      </footer>
+    </div>
+  )
+}
+

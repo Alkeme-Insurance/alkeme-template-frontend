@@ -1,0 +1,661 @@
+# Alkeme Frontend Template - Copier Configuration
+# https://copier.readthedocs.io/en/stable/
+
+_min_copier_version: "9.2"
+_subdirectory: template
+_templates_suffix: .jinja
+_answers_file: .copier-answers.yml
+
+_envops:
+  # Use alternate delimiters for Jinja to avoid conflicts with frontend code
+  block_start_string: "{%"
+  block_end_string: "%}"
+  variable_start_string: "{{"
+  variable_end_string: "}}"
+  comment_start_string: "{#"
+  comment_end_string: "#}"
+
+_skip_if_exists:
+  - "*.md"
+  - ".env"
+  - "src/**/*.tsx"
+  - "src/**/*.ts"
+
+# ============================================================================
+# PROJECT IDENTITY
+# ============================================================================
+
+project_name:
+  type: str
+  help: |
+    What is your frontend project name?
+    This will be used in documentation and the HTML title.
+  default: "Alkeme Template Frontend"
+  validator: >-
+    {% if not project_name or project_name.strip() == '' %}
+    Project name cannot be empty
+    {% endif %}
+
+package_name:
+  type: str
+  help: |
+    NPM package name (kebab-case recommended)
+    This will be the folder name and Docker image name.
+  placeholder: "alkeme-project"
+  default: "{{ project_name | lower | replace(' ', '-') | replace('_', '-') }}"
+  validator: >-
+    {% if not (package_name | regex_search('^[a-zA-Z0-9]([a-zA-Z0-9_.-]*[a-zA-Z0-9])?$')) %}
+    {{package_name}} is not a valid package name. Names must start and end with a letter or digit and may only contain -, _, ., and alphanumeric characters.
+    {% endif %}
+
+project_description:
+  type: str
+  help: Short description of your project
+  placeholder: "A modern React application"
+  default: "A modern React application built with Vite, TypeScript, and Tailwind CSS"
+  validator: >-
+    {% if not project_description or project_description.strip() == '' %}
+    Project description cannot be empty
+    {% endif %}
+
+owner_org:
+  type: str
+  help: Owning organization or team name
+  default: "Alkeme"
+
+author_name:
+  type: str
+  help: Your name or organization name
+  placeholder: "Your Name"
+  default: "Intelligent Solutions Alkeme Team"
+  validator: >-
+    {% if not author_name or author_name.strip() == '' %}
+    Author name cannot be empty
+    {% endif %}
+
+author_email:
+  type: str
+  help: Contact email address
+  placeholder: "email@example.com"
+  default: "dev@alkeme.com"
+  validator: >-
+    {% if not author_email or author_email.strip() == '' %}
+    Author email cannot be empty
+    {% elif '@' not in author_email %}
+    Must be a valid email address
+    {% endif %}
+
+repository_url:
+  type: str
+  help: Git repository URL (leave empty if not yet created)
+  default: ""
+  placeholder: "https://github.com/Alkeme-Insurance/{{ package_name }}"
+
+# ============================================================================
+# FEATURE FLAGS
+# ============================================================================
+
+use_azure_auth:
+  type: bool
+  help: |
+    Include Azure AD authentication (MSAL.js)?
+    Adds Microsoft authentication with SSO capabilities.
+  default: true
+
+use_pwa:
+  type: bool
+  help: |
+    Configure as Progressive Web App?
+    Adds service worker and manifest for offline support.
+  default: false
+
+use_analytics:
+  type: bool
+  help: |
+    Include analytics tracking setup?
+    Adds Microsoft Clarity integration for user behavior insights.
+  default: false
+
+analytics_provider:
+  type: str
+  help: Choose analytics provider
+  choices:
+    - "clarity"
+    - "none"
+  default: "clarity"
+  when: "{{ use_analytics }}"
+
+use_cursor_rules:
+  type: bool
+  help: |
+    Include Cursor AI rules file (.cursorrules)?
+    Provides AI assistant with project-specific coding standards and context.
+  default: true
+
+cursor_rules_style:
+  type: str
+  help: Choose Cursor rules style/focus
+  choices:
+    - "react-typescript"
+    - "frontend-comprehensive"
+    - "minimal"
+  default: "react-typescript"
+  when: "{{ use_cursor_rules }}"
+
+use_git_hooks:
+  type: bool
+  help: |
+    Setup git hooks for secret scanning?
+    Prevents passwords, API keys, and credentials from being committed.
+  default: true
+
+git_hook_tool:
+  type: str
+  help: Choose secret scanning tool for git hooks
+  choices:
+    - "pre-commit"
+    - "detect-secrets"
+    - "custom"
+  default: "pre-commit"
+  when: "{{ use_git_hooks }}"
+
+# ============================================================================
+# PROJECT STRUCTURE & SCAFFOLDING
+# ============================================================================
+
+scaffold_components:
+  type: yaml
+  multiselect: true
+  help: |
+    Select which component directories to scaffold in src/
+    Unselected directories won't be created in the initial project.
+  choices:
+    api:
+      value: &api
+        name: api
+        description: API clients and data fetching
+    auth:
+      value: &auth
+        name: auth
+        description: Authentication (MSAL) components
+    components:
+      value: &components
+        name: components
+        description: Reusable React components
+    pages:
+      value: &pages
+        name: pages
+        description: Page-level components
+    lib:
+      value: &lib
+        name: lib
+        description: Utility functions and helpers
+    types:
+      value: &types
+        name: types
+        description: TypeScript type definitions
+    hooks:
+      value: &hooks
+        name: hooks
+        description: Custom React hooks
+    stores:
+      value: &stores
+        name: stores
+        description: State management stores
+  default: [*api, *auth, *components, *pages, *lib, *types, *hooks]
+
+include_docker:
+  type: bool
+  help: |
+    Include Docker configuration?
+    Generates Dockerfile, docker-compose.yml, and nginx.conf
+  default: true
+
+include_makefile:
+  type: bool
+  help: |
+    Include Makefile for convenient Docker commands?
+    Provides make dev, make build, make deploy shortcuts
+  default: true
+
+include_setup_script:
+  type: bool
+  help: |
+    Include interactive setup script (setup-env.sh)?
+    Helps configure environment variables interactively
+  default: true
+
+# ============================================================================
+# CI/CD CONFIGURATION
+# ============================================================================
+
+ci_github_actions:
+  type: bool
+  help: |
+    Add GitHub Actions CI/CD workflow?
+    Includes lint, typecheck, test, Docker build, and Azure deployment.
+  default: true
+
+ci_include_azure_deploy:
+  type: bool
+  help: |
+    Include Azure deployment steps in CI/CD?
+    Requires Azure service principal secrets in GitHub.
+  default: true
+  when: "{{ ci_github_actions }}"
+
+# ============================================================================
+# AZURE CONFIGURATION
+# ============================================================================
+
+use_azure_deployment:
+  type: bool
+  help: |
+    Generate Azure deployment infrastructure (Bicep)?
+    Creates Container Apps, ACR, and monitoring resources.
+  default: true
+
+azure_region:
+  type: str
+  help: Azure region for deployment
+  choices:
+    - "eastus"
+    - "eastus2"
+    - "westus"
+    - "westus2"
+    - "westus3"
+    - "centralus"
+    - "northcentralus"
+    - "southcentralus"
+    - "westcentralus"
+    - "canadacentral"
+    - "canadaeast"
+    - "brazilsouth"
+    - "northeurope"
+    - "westeurope"
+    - "uksouth"
+    - "ukwest"
+    - "francecentral"
+    - "germanywestcentral"
+    - "norwayeast"
+    - "switzerlandnorth"
+    - "swedencentral"
+    - "australiaeast"
+    - "australiasoutheast"
+    - "southeastasia"
+    - "eastasia"
+    - "japaneast"
+    - "japanwest"
+    - "koreacentral"
+    - "southindia"
+    - "centralindia"
+    - "westindia"
+    - "uaenorth"
+    - "southafricanorth"
+  default: "eastus"
+  when: "{{ use_azure_deployment }}"
+
+azure_environment:
+  type: str
+  help: Initial environment name (dev/staging/prod)
+  default: "dev"
+  choices:
+    - "dev"
+    - "staging"
+    - "prod"
+  when: "{{ use_azure_deployment }}"
+
+azure_subscription_id:
+  type: str
+  help: |
+    Azure subscription ID (optional, can be set later)
+    Leave empty to configure manually after generation.
+  default: ""
+  placeholder: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  when: "{{ use_azure_deployment }}"
+
+azure_resource_group:
+  type: str
+  help: Azure resource group name
+  default: "rg-{{ package_name }}-{{ azure_environment }}"
+  when: "{{ use_azure_deployment }}"
+
+azure_container_registry_name:
+  type: str
+  help: |
+    Azure Container Registry name (alphanumeric only, globally unique)
+    Must be 5-50 characters, lowercase alphanumeric.
+  default: "acr{{ package_name.replace('-', '').replace('_', '') }}{{ azure_environment }}"
+  validator: >-
+    {% if azure_container_registry_name and use_azure_deployment -%}
+    {% if not azure_container_registry_name.isalnum() or not azure_container_registry_name.islower() -%}
+    Must contain only lowercase alphanumeric characters
+    {%- elif azure_container_registry_name|length < 5 or azure_container_registry_name|length > 50 -%}
+    Must be between 5 and 50 characters
+    {%- endif %}
+    {%- endif %}
+  when: "{{ use_azure_deployment }}"
+
+use_azure_front_door:
+  type: bool
+  help: |
+    Include Azure Front Door configuration?
+    Adds global CDN, WAF, and SSL management (additional cost).
+  default: false
+  when: "{{ use_azure_deployment }}"
+
+use_azure_key_vault:
+  type: bool
+  help: |
+    Include Azure Key Vault for secrets management?
+    Recommended for production environments.
+  default: false
+  when: "{{ use_azure_deployment }}"
+
+# ============================================================================
+# AZURE AD (MSAL) CONFIGURATION
+# ============================================================================
+
+azure_tenant_id:
+  type: str
+  help: |
+    Azure AD Tenant ID (optional, can be set later)
+    Used for MSAL authentication configuration.
+  default: ""
+  placeholder: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  when: "{{ use_azure_auth }}"
+
+azure_client_id:
+  type: str
+  help: |
+    Azure AD Application (Client) ID (optional, can be set later)
+    Register your app in Azure AD first.
+  default: ""
+  placeholder: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  when: "{{ use_azure_auth }}"
+
+azure_api_scope:
+  type: str
+  help: |
+    Azure AD API scope for backend access (optional)
+    Example: api://your-backend-app-id/access_as_user
+  default: "api://{{ azure_client_id }}/access_as_user"
+  when: "{{ use_azure_auth and azure_client_id }}"
+
+# ============================================================================
+# DEVELOPMENT CONFIGURATION
+# ============================================================================
+
+dev_port:
+  type: int
+  help: Local development server port
+  default: 5173
+  validator: >-
+    {% if dev_port < 1024 or dev_port > 65535 -%}
+    Port must be between 1024 and 65535
+    {%- endif %}
+
+docker_port:
+  type: int
+  help: Docker host port mapping for frontend
+  default: 3000
+  validator: >-
+    {% if docker_port < 1024 or docker_port > 65535 -%}
+    Port must be between 1024 and 65535
+    {%- endif %}
+
+api_base_url_dev:
+  type: str
+  help: Backend API base URL for local development
+  default: "http://localhost:8000"
+  placeholder: "http://localhost:8000"
+
+
+# ============================================================================
+# PACKAGE MANAGER
+# ============================================================================
+
+package_manager:
+  type: str
+  help: Which JavaScript package manager do you want to use?
+  choices:
+    - "npm"
+    - "pnpm"
+    - "yarn"
+  default: "pnpm"
+
+python_version:
+  type: str
+  help: |
+    Which version of Python do you want to use?
+    Used for Python tooling like pre-commit, detect-secrets, etc.
+  choices:
+    - "3.10"
+    - "3.11"
+    - "3.12"
+    - "3.13"
+  default: "3.12"
+  when: "{{ use_git_hooks }}"
+
+python_dependency_manager:
+  type: str
+  help: |
+    Which Python dependency manager do you use?
+    Used for Python tooling like pre-commit, detect-secrets, etc.
+  choices:
+    - "pip"
+    - "uv"
+    - "poetry"
+    - "pipenv"
+  default: "uv"
+  when: "{{ use_git_hooks }}"
+
+
+
+# ============================================================================
+# POST-GENERATION TASKS
+# ============================================================================
+
+_tasks:
+  # Initialize git repository
+  - command: '[ ! -d .git ] && git init -q || true'
+    when: true
+
+  # Enable Corepack for pnpm/yarn
+  - command: corepack enable || true
+    when: "{{ package_manager in ['pnpm', 'yarn'] }}"
+
+  # Install dependencies based on package manager
+  - command: |
+      {% if package_manager == 'pnpm' %}
+      pnpm install
+      {% elif package_manager == 'yarn' %}
+      yarn install
+      {% else %}
+      npm install
+      {% endif %}
+
+  # Setup git hooks for secret scanning
+  - command: |
+      {% if git_hook_tool == 'pre-commit' %}
+      {% if python_dependency_manager == 'uv' %}
+      uv tool install pre-commit && pre-commit install
+      {% elif python_dependency_manager == 'poetry' %}
+      poetry add --group dev pre-commit && poetry run pre-commit install
+      {% elif python_dependency_manager == 'pipenv' %}
+      pipenv install --dev pre-commit && pipenv run pre-commit install
+      {% else %}
+      pip install pre-commit && pre-commit install
+      {% endif %}
+      {% elif git_hook_tool == 'detect-secrets' %}
+      {% if python_dependency_manager == 'uv' %}
+      uv tool install detect-secrets && detect-secrets scan --baseline .secrets.baseline
+      {% elif python_dependency_manager == 'poetry' %}
+      poetry add --group dev detect-secrets && poetry run detect-secrets scan --baseline .secrets.baseline
+      {% elif python_dependency_manager == 'pipenv' %}
+      pipenv install --dev detect-secrets && pipenv run detect-secrets scan --baseline .secrets.baseline
+      {% else %}
+      pip install detect-secrets && detect-secrets scan --baseline .secrets.baseline
+      {% endif %}
+      {% else %}
+      git config core.hooksPath .githooks
+      {% endif %}
+    when: "{{ use_git_hooks }}"
+
+  # Create .env from env.example
+  - command: '[ ! -f .env ] && cp env.example .env || true'
+    when: true
+
+  # Initial git commit
+  - command: git add .
+    when: true
+
+  - command: 'git commit -m "chore: scaffold {{ package_name }} via Copier"'
+    when: true
+
+  # Success message
+  - |
+    echo ""
+    echo "✅ {{ project_name }} has been successfully created!"
+    echo ""
+    echo "📁 Project location: {{ _copier_conf.dst_path }}"
+    echo ""
+    echo "🚀 Next steps:"
+    echo ""
+    echo "  1. cd {{ package_name }}"
+    {% if package_manager == 'pnpm' %}
+    echo "  2. pnpm dev          # Start development server"
+    echo "  3. pnpm test         # Run tests"
+    echo "  4. pnpm docker:up    # Run with Docker"
+    {% elif package_manager == 'yarn' %}
+    echo "  2. yarn dev          # Start development server"
+    echo "  3. yarn test         # Run tests"
+    echo "  4. yarn docker:up    # Run with Docker"
+    {% else %}
+    echo "  2. npm run dev       # Start development server"
+    echo "  3. npm test          # Run tests"
+    echo "  4. npm run docker:up # Run with Docker"
+    {% endif %}
+    {% if use_azure_deployment %}
+    echo ""
+    echo "☁️  Azure deployment:"
+    echo "  - Review and update infra/main.bicepparam"
+    echo "  - Run: cd infra && ./deploy.sh"
+    {% endif %}
+    {% if use_azure_auth and not azure_client_id %}
+    echo ""
+    echo "🔐 Azure AD Configuration:"
+    echo "  - Register your app in Azure AD"
+    echo "  - Update APP_AZURE_CLIENT_ID and APP_AZURE_TENANT_ID in .env"
+    {% endif %}
+    {% if use_git_hooks %}
+    echo ""
+    echo "🔧 Git Hooks ({{ git_hook_tool }}):"
+    echo "  - Python {{ python_version }} with {{ python_dependency_manager }}"
+    echo "  - Secret scanning enabled to prevent credential leaks"
+    {% endif %}
+    {% if use_cursor_rules %}
+    echo ""
+    echo "✨ AI Editor Support:"
+    echo "  - .cursorrules file configured for {{ cursor_rules_style }}"
+    echo "  - Enhanced AI assistance with project context"
+    {% endif %}
+    echo ""
+    echo "📖 Documentation: README.md"
+    echo ""
+    echo "🎯 Key Features:"
+    echo "  ⚡ Vite + React 18 + TypeScript"
+    echo "  🎨 Tailwind CSS + Shadcn/ui components"
+    {% if include_docker %}
+    echo "  🐳 Docker development environment"
+    {% endif %}
+    {% if use_git_hooks %}
+    echo "  🔧 Pre-commit hooks with secret scanning"
+    {% endif %}
+    echo ""
+
+# ============================================================================
+# TEMPLATE METADATA
+# ============================================================================
+
+_metadata:
+  template_name: "Alkeme Frontend Template"
+  template_version: "1.0.0"
+  template_description: "Production-ready React + TypeScript + Tailwind template with Docker and Azure deployment"
+  template_url: "https://github.com/alkeme/alkeme-template-frontend"
+  copier_version: "9.2.0"
+  features:
+    - "⚡ Modern Frontend: React 18+ with Vite, TypeScript, and Tailwind CSS"
+    - "🐍 Modern Python Tooling: Support for Python 3.10-3.13"
+    - "📦 uv Package Manager: Fast and reliable Python package management"
+    - "🐳 Docker Support: Complete Docker development environment"
+    - "✨ AI Editor Support: .cursorrules and documentation for AI-powered development"
+    - "📝 Type Safety: Full TypeScript support with strict type checking"
+    - "🔍 Code Quality: Pre-configured ESLint, Prettier, and Ruff for Python tools"
+    - "🧪 Testing: Vitest setup with example tests"
+    - "🔧 Pre-commit Hooks: Automated code quality checks and secret scanning"
+    - "🏗️ CI Ready: GitHub Actions workflows included"
+    - "☁️ Azure Deployment: Bicep infrastructure and Container Apps support"
+    - "🔐 Authentication: Azure AD (MSAL) integration ready"
+    - "🎨 Component Library: Shadcn/ui integration with Tailwind"
+
+# ============================================================================
+# TEMPLATE STRUCTURE DOCUMENTATION
+# ============================================================================
+#
+# This template generates the following structure:
+#
+# 📁 {{package_name}}/                          # Root project directory
+# ├── 📄 {{_copier_conf.answers_file}}.jinja    # Copier answers file
+# ├── 📄 .env.example                           # Environment variables template
+# ├── 📄 package.json.jinja                     # Package configuration
+# ├── 📄 tsconfig.json                          # TypeScript configuration
+# ├── 📄 vite.config.ts                         # Vite build configuration
+# ├── 📄 tailwind.config.js                     # Tailwind CSS configuration
+# ├── 📄 index.html                             # HTML entry point
+# {% if include_docker %}
+# ├── 📄 Dockerfile                             # Docker build configuration
+# ├── 📄 docker-compose.yml                     # Multi-service orchestration
+# ├── 📄 nginx.conf                             # Nginx server configuration
+# {% endif %}
+# {% if include_makefile %}
+# ├── 📄 Makefile                               # Convenient Docker commands
+# {% endif %}
+# {% if include_setup_script %}
+# ├── 📄 setup-env.sh                           # Interactive setup script
+# {% endif %}
+# {% if use_git_hooks %}
+# ├── 📁 .githooks/                             # Custom git hooks
+# │   └── 📄 pre-commit                         # Secret scanning hook
+# {% endif %}
+# {% if ci_github_actions %}
+# ├── 📁 .github/
+# │   └── 📁 workflows/
+# │       └── 📄 ci-cd.yml                      # GitHub Actions workflow
+# {% endif %}
+# {% if use_azure_deployment %}
+# ├── 📁 infra/                                 # Azure infrastructure
+# │   ├── 📄 main.bicep                         # Bicep infrastructure code
+# │   ├── 📄 main.bicepparam                    # Bicep parameters
+# │   └── 📄 deploy.sh                          # Deployment script
+# {% endif %}
+# ├── 📁 public/                                # Static assets
+# │   ├── 📄 favicon.ico
+# │   └── 📄 robots.txt
+# └── 📁 src/                                   # Source code
+#     ├── 📄 main.tsx                           # Application entry point
+#     ├── 📄 App.tsx.jinja                      # Main app component
+#     ├── 📄 vite-env.d.ts                      # Vite type declarations
+#     {% for component in scaffold_components %}
+#     ├── 📁 {{component.name}}/                # {{component.description}}
+#     │   └── 📄 .gitkeep                       # Ensures directory is tracked
+#     {% endfor %}
+#     └── 📁 styles/                            # Global styles
+#         └── 📄 globals.css                    # Global CSS with Tailwind
+#
+# Files with .jinja extension are processed as Jinja templates.
+# Use {{ variable }} for substitution and {% %} for logic.
+# Variables available: all answers + _copier_conf, _copier_answers, _folder_name
+#
+# Reference: https://copier.readthedocs.io/en/stable/creating/
+

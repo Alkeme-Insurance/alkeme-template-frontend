@@ -1,0 +1,99 @@
+---
+description: Project Context and Architecture
+globs:
+alwaysApply: true
+---
+
+## Project Summary
+FastAPI Backend to a React Frontend, 
+
+Key highlights include:
+- **Type-Safe Development** - Full Pydantic v2 integration for data validation and serialization with complete type hints
+- **Production-Ready Patterns** - Implements dependency injection, RORO pattern, and single responsibility principles for maintainable code
+
+
+## Tech Stack
+
+## Backend
+- **Python 3.13+** - Core language
+- **FastAPI** - Modern, fast web framework for building APIs
+- **Uvicorn** - ASGI server for running FastAPI applications
+- **Rich** - Rich text and beautiful formatting in the terminal
+- **Pydantic v2** - Data validation and serialization using Python type annotations
+
+## Development & Tooling
+- **uv** - Fast Python package installer and resolver
+- **virtualenv** - Python environment management
+- **pyproject.toml** - Modern Python project configuration
+- **ruff** - Extremely fast Python linter and code formatter that replaces multiple tools (flake8, isort, etc.) with a single, high-performance solution
+- **pytest** - Modern testing framework for Python that provides powerful features like fixtures, parametrized testing, and comprehensive test discovery for reliable test-driven development
+- **tox** - Testing automation tool that creates isolated virtual environments to test code against multiple Python versions and dependency configurations
+- **Azure CLI (az)** - Command-line interface for managing Azure resources, deployments, and cloud services
+- **pre-commit** - Git hooks framework that runs automated checks (linting, formatting, security scans) before commits to ensure code quality and consistency across the team
+- **GitHub CLI (gh)** - Official command-line tool for GitHub that enables repository management, pull requests, issues, and CI/CD workflows directly from the terminal without needing to use the web interface
+
+
+## Architecture Patterns
+- **Modular, layered architecture** (not MVT)
+  - `models/schemas` - Pydantic models for data validation
+  - `services` - Business logic layer
+  - `routers` - API path operations and request handling
+  - `utils` - Shared utilities
+  - `clients` - External API integrations
+  - `middleware` - Request/response processing
+- **Dependency Injection** - Using FastAPI's `Depends` for shared resources
+- **RORO Pattern** - Receive an object, return an object
+- **Single Responsibility Principle** - Small, focused functions and modules
+
+## Observability & Monitoring
+- **Rich Console** - Enhanced terminal output and logging
+- **Structured Logging** - With correlation/request IDs
+- **Request Tracing** - Performance monitoring and debugging
+- **Error Handling** - Centralized exception handling via middleware
+
+## Code Standards
+- **PEP 8** compliance with type hints on all function signatures
+- **ES Modules** equivalent pattern for Python imports
+- **Async/Await** for I/O-bound operations
+- **Guard Clauses** and early returns for error handling
+- **Descriptive Naming** - Verbose, explicit function and variable names
+
+## Code Conventions
+
+### Naming & Style
+- **Functions & Variables**: `lowercase_with_underscores` (snake_case)
+- **Constants**: `UPPERCASE_WITH_UNDERSCORES` for immutable values
+- **Classes**: `PascalCase` for class names
+- **Modules & Files**: `lowercase_with_underscores.py`
+- **Descriptive Names**: Prefer verbose, explicit names (e.g., `is_user_authenticated`, `calculate_monthly_revenue`)
+- **Boolean Functions**: Use `is_`, `has_`, `can_`, `should_` prefixes
+
+### Function Design
+- **Single Responsibility**: Each function should do one thing well
+- **Pure Functions**: Prefer functions without side effects when possible
+- **Type Hints**: Required on all function signatures and return types
+- **Guard Clauses**: Use early returns to handle edge cases and validation
+- **RORO Pattern**: Functions should receive objects and return objects
+
+### Module Organization
+- **Named Exports**: Use `__all__` to explicitly define public API
+- **Import Style**: Use absolute imports; group standard library, third-party, and local imports
+- **Dependency Injection**: Use FastAPI's `Depends()` for shared resources
+- **Business Logic Separation**: Keep business logic in services, not routers
+
+### Async/Await Usage
+- **I/O Operations**: Use `async def` for database calls, external APIs, file operations
+- **CPU-Bound**: Use regular `def` for pure computation and data transformation
+- **Consistency**: Don't mix sync and async unnecessarily in the same module
+
+### Error Handling
+- **Early Validation**: Validate inputs at function entry with Pydantic models
+- **HTTPException**: Use for expected API errors with meaningful messages
+- **Logging**: Log unexpected exceptions centrally via middleware
+- **Consistent Responses**: Return structured error objects with actionable messages
+
+### Documentation
+- **Docstrings**: Use for complex business logic and public APIs
+- **Type Annotations**: Serve as inline documentation
+- **Comments**: Explain "why" not "what" - code should be self-documenting
+- **README**: Keep project setup and architecture decisions documented

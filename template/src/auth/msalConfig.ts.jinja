@@ -1,0 +1,130 @@
+{% if use_azure_auth -%}
+import { PublicClientApplication, type Configuration, type PopupRequest } from '@azure/msal-browser'
+
+// Runtime environment from window.__ENV__ (injected by Docker entrypoint)
+const RUNTIME = (window as any).__ENV__ || {}
+
+// MSAL Configuration
+export const msalConfig: Configuration = {
+  auth: {
+    clientId: RUNTIME.APP_AZURE_CLIENT_ID || 'your-client-id',
+    authority: `https://login.microsoftonline.com/${RUNTIME.APP_AZURE_TENANT_ID || 'your-tenant-id'}`,
+    redirectUri: window.location.origin,
+    postLogoutRedirectUri: window.location.origin,
+  },
+  cache: {
+    cacheLocation: 'localStorage',
+    storeAuthStateInCookie: false,
+  },
+  system: {
+    loggerOptions: {
+      loggerCallback: (level, message, containsPii) => {
+        if (containsPii) return
+        
+        switch (level) {
+          case 0: // Error
+            console.error('🔐 MSAL Error:', message)
+            break
+          case 1: // Warning
+            console.warn('🔐 MSAL Warning:', message)
+            break
+          case 2: // Info
+            console.info('🔐 MSAL Info:', message)
+            break
+          case 3: // Verbose
+            console.debug('🔐 MSAL Debug:', message)
+            break
+        }
+      },
+      logLevel: process.env.NODE_ENV === 'development' ? 2 : 1, // Info in dev, Warning in prod
+    },
+  },
+}
+
+// Create MSAL instance
+export const msalInstance = new PublicClientApplication(msalConfig)
+
+// Initialize MSAL
+msalInstance.initialize().then(() => {
+  console.info('✅ MSAL initialized successfully')
+}).catch((error) => {
+  console.error('❌ MSAL initialization failed:', error)
+})
+
+// Login request configuration
+export const loginRequest: PopupRequest = {
+  scopes: [RUNTIME.APP_AZURE_API_SCOPE || 'User.Read'].filter(Boolean),
+}
+
+// Silent token request
+export const tokenRequest = {
+  scopes: [RUNTIME.APP_AZURE_API_SCOPE || 'User.Read'].filter(Boolean),
+}
+
+// Helper function to check if user is authenticated
+export function isAuthenticated(): boolean {
+  const accounts = msalInstance.getAllAccounts()
+  return accounts.length > 0
+}
+
+// Helper function to get current user
+export function getCurrentUser() {
+  const accounts = msalInstance.getAllAccounts()
+  return accounts.length > 0 ? accounts[0] : null
+}
+
+// Helper function to login with popup
+export async function loginWithPopup() {
+  try {
+    const response = await msalInstance.loginPopup(loginRequest)
+    console.info('✅ Login successful:', response.account.username)
+    return response
+  } catch (error) {
+    console.error('❌ Login failed:', error)
+    throw error
+  }
+}
+
+// Helper function to login with redirect
+export async function loginWithRedirect() {
+  try {
+    await msalInstance.loginRedirect(loginRequest)
+  } catch (error) {
+    console.error('❌ Login redirect failed:', error)
+    throw error
+  }
+}
+
+// Helper function to logout
+export async function logout() {
+  try {
+    const account = getCurrentUser()
+    if (account) {
+      await msalInstance.logoutPopup({ account })
+      console.info('✅ Logout successful')
+    }
+  } catch (error) {
+    console.error('❌ Logout failed:', error)
+    throw error
+  }
+}
+
+// Helper function to acquire token silently
+export async function acquireTokenSilently() {
+  try {
+    const account = getCurrentUser()
+    if (!account) throw new Error('No authenticated user')
+
+    const response = await msalInstance.acquireTokenSilent({
+      ...tokenRequest,
+      account,
+    })
+    
+    return response.accessToken
+  } catch (error) {
+    console.error('❌ Token acquisition failed:', error)
+    throw error
+  }
+}
+{%- endif %}
+

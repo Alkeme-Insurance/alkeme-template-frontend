@@ -1,0 +1,148 @@
+import axios, { type AxiosInstance, type AxiosError } from 'axios'
+{% if use_azure_auth -%}
+import { msalInstance } from '../auth/msalConfig'
+import { InteractionRequiredAuthError } from '@azure/msal-browser'
+{%- endif %}
+
+// Runtime environment from window.__ENV__ (injected by Docker entrypoint)
+const RUNTIME = (window as any).__ENV__ || {}
+
+export const API_BASE_URL: string = RUNTIME.APP_API_BASE_URL ?? 'http://localhost:8000'
+
+console.info('🌐 API Client initialized with base URL:', API_BASE_URL)
+
+// Create axios instance
+export const apiClient: AxiosInstance = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+})
+
+{% if use_azure_auth -%}
+// Request interceptor: Add authentication token
+apiClient.interceptors.request.use(
+  async (config) => {
+    const devNoAuth = RUNTIME.APP_DEV_NO_AUTH === 'true'
+    
+    if (devNoAuth) {
+      console.warn('⚠️  Dev mode: Skipping authentication')
+      return config
+    }
+
+    try {
+      const accounts = msalInstance.getAllAccounts()
+      
+      if (accounts.length > 0) {
+        const request = {
+          scopes: [RUNTIME.APP_AZURE_API_SCOPE].filter(Boolean),
+          account: accounts[0],
+        }
+
+        const response = await msalInstance.acquireTokenSilent(request)
+        config.headers.Authorization = `Bearer ${response.accessToken}`
+      }
+    } catch (error) {
+      if (error instanceof InteractionRequiredAuthError) {
+        console.error('🔐 Token expired, user interaction required')
+        // Optionally trigger re-login
+        // await msalInstance.acquireTokenRedirect(request)
+      } else {
+        console.error('❌ Error acquiring token:', error)
+      }
+    }
+
+    return config
+  },
+  (error) => Promise.reject(error)
+)
+{%- endif %}
+
+// Response interceptor: Handle common errors
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error: AxiosError) => {
+    if (error.response) {
+      // Server responded with error status
+      const status = error.response.status
+      const data = error.response.data as any
+
+      switch (status) {
+        case 401:
+          console.error('🔐 Unauthorized - redirecting to login')
+          {% if use_azure_auth -%}
+          // Redirect to login page
+          window.location.href = '/login'
+          {%- endif %}
+          break
+        case 403:
+          console.error('🚫 Forbidden - insufficient permissions')
+          break
+        case 404:
+          console.error('🔍 Not found:', error.config?.url)
+          break
+        case 500:
+          console.error('💥 Server error:', data?.message || 'Internal server error')
+          break
+        default:
+          console.error(`❌ HTTP ${status}:`, data?.message || error.message)
+      }
+    } else if (error.request) {
+      // Request made but no response received
+      console.error('📡 Network error - no response from server')
+    } else {
+      // Something else happened
+      console.error('❌ Request error:', error.message)
+    }
+
+    return Promise.reject(error)
+  }
+)
+
+// Type-safe API response wrapper
+export interface ApiResponse<T> {
+  data: T
+  message?: string
+  success: boolean
+}
+
+// Helper function for GET requests
+export async function get<T>(url: string, params?: Record<string, any>): Promise<T> {
+  const response = await apiClient.get<ApiResponse<T>>(url, { params })
+  return response.data.data
+}
+
+// Helper function for POST requests
+export async function post<T>(url: string, data?: any): Promise<T> {
+  const response = await apiClient.post<ApiResponse<T>>(url, data)
+  return response.data.data
+}
+
+// Helper function for PUT requests
+export async function put<T>(url: string, data?: any): Promise<T> {
+  const response = await apiClient.put<ApiResponse<T>>(url, data)
+  return response.data.data
+}
+
+// Helper function for DELETE requests
+export async function del<T>(url: string): Promise<T> {
+  const response = await apiClient.delete<ApiResponse<T>>(url)
+  return response.data.data
+}
+
+// Example API functions (customize based on your backend)
+export const api = {
+  // Health check
+  health: () => get<{ status: string }>('/health'),
+  
+  // Add your API endpoints here
+  // users: {
+  //   list: () => get<User[]>('/users'),
+  //   get: (id: string) => get<User>(`/users/${id}`),
+  //   create: (data: CreateUserDto) => post<User>('/users', data),
+  //   update: (id: string, data: UpdateUserDto) => put<User>(`/users/${id}`, data),
+  //   delete: (id: string) => del<void>(`/users/${id}`),
+  // },
+}
+

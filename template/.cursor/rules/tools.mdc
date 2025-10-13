@@ -1,0 +1,647 @@
+---
+description: Development Tools and Tooling Best Practices
+globs:
+alwaysApply: true
+---
+
+# Development Tools Guidelines
+
+## Package Management
+
+### Python - uv
+- Use `uv` for all Python package management (fastest resolver available).
+- Always pin versions in `pyproject.toml` or `requirements.txt`.
+- Use `uv pip compile` to generate locked dependency files.
+- Prefer `uv pip install` over `pip install`.
+
+```bash
+# Install dependencies
+uv pip install -r requirements.txt
+
+# Add a new package
+uv pip install package-name
+uv pip freeze > requirements.txt
+
+# Compile dependencies with constraints
+uv pip compile pyproject.toml -o requirements.txt
+```
+
+### JavaScript - pnpm/npm/yarn
+- Use `pnpm` by default (faster, more efficient disk usage).
+- Lock files (`pnpm-lock.yaml`) must be committed.
+- Use exact versions for critical dependencies.
+- Run `pnpm audit` regularly to check for vulnerabilities.
+
+```bash
+# Install dependencies
+pnpm install
+
+# Add a new package
+pnpm add package-name
+
+# Add dev dependency
+pnpm add -D package-name
+
+# Update dependencies
+pnpm update
+```
+
+## Python Virtual Environments
+
+### virtualenv
+- Always use virtual environments for Python projects.
+- Never install packages globally.
+- Include venv in `.gitignore`.
+
+```bash
+# Create virtual environment
+virtualenv venv
+
+# Activate (Linux/Mac)
+source venv/bin/activate
+
+# Activate (Windows)
+venv\Scripts\activate
+
+# Deactivate
+deactivate
+```
+
+## Code Quality Tools
+
+### Ruff (Python)
+- Use `ruff` for both linting and formatting (replaces flake8, black, isort).
+- Configure in `pyproject.toml`.
+- Run before committing code.
+- Integrate with pre-commit hooks.
+
+```bash
+# Check for issues
+ruff check .
+
+# Fix auto-fixable issues
+ruff check --fix .
+
+# Format code
+ruff format .
+
+# Check specific file
+ruff check path/to/file.py
+```
+
+Configuration example (`pyproject.toml`):
+```toml
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W"]
+ignore = ["E501"]
+```
+
+### ESLint (JavaScript/TypeScript)
+- Use ESLint with TypeScript parser.
+- Configure in `.eslintrc.cjs` or `eslint.config.js`.
+- Integrate with Prettier for formatting.
+
+```bash
+# Check for issues
+pnpm lint
+
+# Fix auto-fixable issues
+pnpm lint:fix
+
+# Check specific file
+pnpm eslint src/components/Button.tsx
+```
+
+### Prettier (JavaScript/TypeScript)
+- Use for consistent code formatting.
+- Configure in `.prettierrc`.
+- Integrate with ESLint via `eslint-config-prettier`.
+
+```bash
+# Format all files
+pnpm format
+
+# Check formatting without changing files
+pnpm format:check
+```
+
+## Testing Tools
+
+### pytest (Python)
+- Write tests in `tests/` directory.
+- Name test files `test_*.py` or `*_test.py`.
+- Use fixtures for setup/teardown.
+- Parametrize tests to reduce duplication.
+
+```bash
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=app --cov-report=html
+
+# Run specific test file
+pytest tests/test_api.py
+
+# Run specific test function
+pytest tests/test_api.py::test_create_user
+
+# Run with verbose output
+pytest -v
+
+# Stop on first failure
+pytest -x
+```
+
+Configuration example (`pyproject.toml`):
+```toml
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v --strict-markers --cov=app"
+```
+
+### Vitest (JavaScript/TypeScript)
+- Modern, fast unit testing framework for Vite projects.
+- Use for component and utility testing.
+
+```bash
+# Run tests
+pnpm test
+
+# Run in watch mode
+pnpm test:watch
+
+# Run with UI
+pnpm test:ui
+
+# Run with coverage
+pnpm test:coverage
+```
+
+### Playwright (E2E Testing)
+- Use for end-to-end browser testing.
+- Write tests in `e2e/` or `tests/e2e/` directory.
+
+```bash
+# Run E2E tests
+pnpm e2e
+
+# Run in UI mode
+pnpm e2e:ui
+
+# Run specific test file
+pnpm playwright test tests/e2e/login.spec.ts
+
+# Debug tests
+pnpm playwright test --debug
+```
+
+## Git Hooks and Pre-commit
+
+### pre-commit Framework
+- Configure in `.pre-commit-config.yaml`.
+- Run automatically before commits.
+- Ensures code quality before it enters the repository.
+
+```bash
+# Install hooks
+pre-commit install
+
+# Run manually on all files
+pre-commit run --all-files
+
+# Run manually on staged files
+pre-commit run
+
+# Update hooks to latest versions
+pre-commit autoupdate
+
+# Skip hooks (use sparingly)
+git commit --no-verify
+```
+
+Configuration example (`.pre-commit-config.yaml`):
+```yaml
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.0
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v8.56.0
+    hooks:
+      - id: eslint
+        files: \.(js|jsx|ts|tsx)$
+```
+
+## Vite
+
+### Overview
+Vite is the build tool for this project. It provides fast HMR (Hot Module Replacement) and optimized production builds.
+
+### Common Commands
+```bash
+# Start development server
+pnpm dev
+
+# Build for production
+pnpm build
+
+# Preview production build locally
+pnpm preview
+
+# Build with type checking
+pnpm typecheck && pnpm build
+```
+
+### Configuration
+Configure in `vite.config.ts`:
+```typescript
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    port: 3000,
+    host: true
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: true
+  }
+})
+```
+
+### Best Practices
+- Keep dev server running during development for fast HMR.
+- Use `preview` to test production builds locally before deploying.
+- Enable sourcemaps in production for easier debugging.
+- Use environment variables via `import.meta.env` (not `process.env`).
+- Optimize bundle size with code splitting and lazy loading.
+
+### Environment Variables
+```typescript
+// Access Vite environment variables
+const apiUrl = import.meta.env.VITE_API_URL
+const mode = import.meta.env.MODE // 'development' or 'production'
+const isDev = import.meta.env.DEV
+const isProd = import.meta.env.PROD
+```
+
+### Performance Tips
+- Use `React.lazy()` for code splitting large components.
+- Analyze bundle size: `pnpm build && npx vite-bundle-visualizer`.
+- Leverage Vite's automatic code splitting for better caching.
+
+## Docker and Docker Compose
+
+### Docker Compose Overview
+Use Docker Compose to orchestrate multi-container applications (frontend + backend + databases).
+
+### Common Docker Commands
+```bash
+# Build image
+docker build -t myapp:latest .
+
+# Run container
+docker run -p 3000:80 myapp:latest
+
+# View logs
+docker logs container-id
+docker logs -f container-id  # Follow logs
+
+# Execute command in running container
+docker exec -it container-id /bin/sh
+
+# Stop container
+docker stop container-id
+
+# Remove container
+docker rm container-id
+
+# Remove image
+docker rmi myapp:latest
+
+# Clean up system
+docker system prune -a
+```
+
+### Docker Compose Commands
+```bash
+# Start all services (build if needed)
+docker compose up
+
+# Start in detached mode (background)
+docker compose up -d
+
+# Build and start
+docker compose up --build
+
+# Stop services
+docker compose stop
+
+# Stop and remove containers
+docker compose down
+
+# Stop and remove containers + volumes
+docker compose down -v
+
+# View logs
+docker compose logs
+
+# Follow logs for all services
+docker compose logs -f
+
+# Follow logs for specific service
+docker compose logs -f frontend
+
+# List running services
+docker compose ps
+
+# Execute command in running service
+docker compose exec frontend sh
+
+# Rebuild specific service
+docker compose build frontend
+
+# Restart specific service
+docker compose restart frontend
+```
+
+### Docker Compose Configuration
+Configure in `docker-compose.yml`:
+```yaml
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    environment:
+      - APP_API_BASE_URL=${APP_API_BASE_URL}
+    volumes:
+      - ./.env:/usr/share/nginx/html/.env:ro
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    restart: unless-stopped
+```
+
+### Best Practices
+- Use multi-stage builds to reduce image size.
+- Don't run containers as root user.
+- Use `.dockerignore` to exclude unnecessary files from build context.
+- Pin base image versions (e.g., `node:20-alpine`, not `node:latest`).
+- Use health checks to ensure containers are ready.
+- Leverage build cache by ordering Dockerfile commands properly.
+- Use named volumes for persistent data.
+- Set resource limits in production.
+- Clean up unused images regularly: `docker system prune -a`.
+
+### Docker Security
+- Scan images for vulnerabilities: `docker scout cves myapp:latest`.
+- Use official base images from trusted sources.
+- Keep base images updated.
+- Don't store secrets in images (use environment variables or secrets management).
+- Run containers with read-only filesystems when possible.
+- Use Docker secrets for sensitive data in production.
+
+### Development Workflow
+```bash
+# Initial setup
+docker compose up --build
+
+# Daily development
+docker compose up -d  # Start in background
+docker compose logs -f  # Watch logs
+
+# After code changes
+docker compose restart frontend  # Quick restart
+# or
+docker compose up --build frontend  # Full rebuild
+
+# Debugging
+docker compose exec frontend sh  # Shell into container
+docker compose logs frontend  # View service logs
+
+# Cleanup
+docker compose down  # Stop and remove
+docker compose down -v  # Include volumes
+```
+
+### Makefile Integration
+Create a `Makefile` for common Docker Compose operations:
+```makefile
+.PHONY: up down build logs shell clean
+
+up:
+	docker compose up -d
+
+down:
+	docker compose down
+
+build:
+	docker compose up --build
+
+logs:
+	docker compose logs -f
+
+shell:
+	docker compose exec frontend sh
+
+clean:
+	docker compose down -v
+	docker system prune -f
+```
+
+Then use: `make up`, `make logs`, etc.
+
+## Azure CLI
+
+### Common Commands
+```bash
+# Login
+az login
+
+# Set subscription
+az account set --subscription "subscription-name-or-id"
+
+# List resources
+az resource list --resource-group myResourceGroup
+
+# Deploy infrastructure
+az deployment group create \
+  --resource-group myResourceGroup \
+  --template-file main.bicep
+
+# View logs
+az monitor app-insights query \
+  --app myAppInsights \
+  --analytics-query "requests | take 10"
+```
+
+### Best Practices
+- Always specify `--resource-group` to avoid accidental operations.
+- Use `--output table` for human-readable output.
+- Use `--output json` for scripting.
+- Store credentials securely (use Key Vault, not plain text).
+
+## GitHub CLI (gh)
+
+### Common Commands
+```bash
+# Create pull request
+gh pr create --title "Feature: Add login" --body "Description"
+
+# View pull request status
+gh pr status
+
+# List pull requests
+gh pr list
+
+# Create issue
+gh issue create --title "Bug: Login fails" --body "Steps to reproduce"
+
+# List issues
+gh issue list
+
+# Run workflow
+gh workflow run ci.yml
+
+# View workflow runs
+gh run list
+```
+
+### Best Practices
+- Use `gh` for PR operations to save time.
+- Integrate with CI/CD workflows.
+- Use `gh pr view` to quickly review PRs from terminal.
+
+## Type Checking
+
+### TypeScript
+```bash
+# Check types without emitting files
+pnpm typecheck
+
+# Watch mode
+tsc --watch
+
+# Check specific file
+tsc --noEmit src/utils/helpers.ts
+```
+
+### mypy (Python)
+```bash
+# Type check Python code
+mypy app/
+
+# Check specific file
+mypy app/main.py
+
+# Strict mode
+mypy --strict app/
+```
+
+## Continuous Integration
+
+### Running Checks Locally
+Before pushing code, run all checks locally:
+
+```bash
+# Python project
+ruff check .
+ruff format .
+pytest
+mypy app/
+
+# TypeScript project
+pnpm lint
+pnpm format:check
+pnpm typecheck
+pnpm test
+pnpm e2e
+```
+
+### CI Pipeline Commands
+Ensure CI pipeline runs the same commands:
+- Linting (ruff, eslint)
+- Formatting checks (ruff format, prettier)
+- Type checking (mypy, tsc)
+- Unit tests (pytest, vitest)
+- E2E tests (playwright)
+- Security scans (pre-commit, npm audit)
+
+## Debugging Tools
+
+### Python
+- Use `rich.print()` for enhanced console output.
+- Use `breakpoint()` for interactive debugging (Python 3.7+).
+- Use `pytest --pdb` to drop into debugger on test failure.
+
+### JavaScript/TypeScript
+- Use `console.log()` sparingly (prefer proper logging).
+- Use browser DevTools for debugging.
+- Use `debugger` statement to pause execution.
+- Use VS Code debugger with launch configurations.
+
+## Performance and Profiling
+
+### Python
+```bash
+# Profile with cProfile
+python -m cProfile -o profile.stats app/main.py
+
+# View profile results
+python -m pstats profile.stats
+```
+
+### JavaScript
+- Use browser DevTools Performance tab.
+- Use React DevTools Profiler for component performance.
+- Use Lighthouse for web performance audits.
+
+## Documentation Generation
+
+### Python
+```bash
+# Generate docs with Sphinx
+sphinx-build -b html docs/ docs/_build/
+
+# Auto-generate API docs
+sphinx-apidoc -o docs/api app/
+```
+
+### TypeScript
+```bash
+# Generate docs with TypeDoc
+typedoc --out docs src/
+```
+
+## Tool Integration
+
+All tools should be integrated into your workflow:
+1. **Pre-commit hooks** - Catch issues before commit
+2. **CI/CD pipeline** - Run checks on every push
+3. **Editor integration** - Real-time feedback (LSP, linters)
+4. **Git hooks** - Enforce quality gates
+
+Never skip tool checks just to "move faster" - they catch bugs early and save time overall.

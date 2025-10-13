@@ -1,0 +1,560 @@
+---
+description: React and TypeScript Best Practices
+globs: "*.tsx,*.ts,*.jsx,*.js"
+---
+
+# React Component Guidelines
+
+## Component Structure
+
+- Use functional components with hooks exclusively.
+- Define component props with explicit TypeScript interfaces.
+- Export components as named exports (not default exports).
+- Place component files in feature-based directories.
+
+Example:
+```typescript
+interface UserProfileProps {
+  userId: string
+  onUpdate?: (user: User) => void
+}
+
+export function UserProfile({ userId, onUpdate }: UserProfileProps) {
+  // Component implementation
+}
+```
+
+## Props and State
+
+- Use TypeScript interfaces for all component props.
+- Avoid prop drilling - lift state when needed, but not preemptively.
+- Prefer controlled components over uncontrolled.
+- Use `ReactNode` for children prop type.
+- Use default parameters for optional props, not `defaultProps`.
+- Destructure props in function signature.
+
+```typescript
+// Good
+interface ButtonProps {
+  variant?: 'primary' | 'secondary'
+  children: ReactNode
+  onClick?: () => void
+}
+
+export function Button({ 
+  variant = 'primary', 
+  children, 
+  onClick 
+}: ButtonProps) {
+  // Implementation
+}
+
+// Bad - don't use defaultProps
+Button.defaultProps = {
+  variant: 'primary'
+}
+```
+
+## Hooks Usage
+
+- Follow Rules of Hooks: only call at top level, only in React functions.
+- Custom hooks must start with `use` prefix.
+- Extract reusable logic into custom hooks.
+- Keep hooks focused and single-purpose.
+- Document complex custom hooks with JSDoc.
+
+```typescript
+// Custom hook example
+function useAuth() {
+  const [user, setUser] = useState<User | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  
+  useEffect(() => {
+    // Auth logic
+  }, [])
+  
+  return { user, isLoading }
+}
+```
+
+## Common Hooks Best Practices
+
+### useState
+- Initialize with appropriate default value.
+- Use functional updates when new state depends on previous state.
+- Split related state into multiple useState calls.
+
+```typescript
+// Good - functional update
+setCount(prev => prev + 1)
+
+// Bad - may cause race conditions
+setCount(count + 1)
+```
+
+### useEffect
+- Keep effects focused on a single purpose.
+- Always return cleanup function if needed.
+- Correctly specify dependency array.
+- Avoid putting objects/arrays in dependencies unless memoized.
+
+```typescript
+// Good
+useEffect(() => {
+  const subscription = api.subscribe(userId)
+  return () => subscription.unsubscribe()
+}, [userId]) // Only re-run when userId changes
+
+// Bad - missing cleanup
+useEffect(() => {
+  const subscription = api.subscribe(userId)
+}, [userId])
+```
+
+### useMemo and useCallback
+- Use only when profiling shows performance issue.
+- Don't prematurely optimize.
+- Required for preventing rerenders of memoized child components.
+
+```typescript
+// Use when passing to memoized child
+const handleClick = useCallback(() => {
+  doSomething(value)
+}, [value])
+
+// Use for expensive calculations
+const sortedData = useMemo(() => {
+  return data.sort(complexSortFn)
+}, [data])
+```
+
+### useRef
+- Use for DOM references and mutable values that don't trigger rerenders.
+- Use `forwardRef` when exposing refs to parent components.
+
+```typescript
+function TextInput() {
+  const inputRef = useRef<HTMLInputElement>(null)
+  
+  useEffect(() => {
+    inputRef.current?.focus()
+  }, [])
+  
+  return <input ref={inputRef} />
+}
+```
+
+## Component Patterns
+
+### Composition Over Props
+- Use children and composition instead of many conditional props.
+- Create wrapper components for common patterns.
+
+```typescript
+// Good - composition
+<Card>
+  <CardHeader>Title</CardHeader>
+  <CardContent>Content</CardContent>
+</Card>
+
+// Bad - too many props
+<Card title="Title" content="Content" showHeader showFooter />
+```
+
+### Conditional Rendering
+- Use logical AND for single conditions.
+- Use ternary for if-else conditions.
+- Extract complex conditions into variables or functions.
+
+```typescript
+// Simple condition
+{isLoading && <Spinner />}
+
+// If-else
+{isError ? <ErrorMessage /> : <Content />}
+
+// Complex - extract to variable
+const shouldShowWarning = user.isNew && !user.hasCompletedOnboarding
+{shouldShowWarning && <OnboardingWarning />}
+```
+
+### Lists and Keys
+- Always provide stable, unique keys when rendering lists.
+- Never use array index as key unless list never changes.
+- Keys should be unique among siblings, not globally.
+
+```typescript
+// Good
+{users.map(user => (
+  <UserCard key={user.id} user={user} />
+))}
+
+// Bad - using index
+{users.map((user, index) => (
+  <UserCard key={index} user={user} />
+))}
+```
+
+## Event Handlers
+
+- Name event handlers with `handle` prefix: `handleClick`, `handleSubmit`.
+- Define inline only for trivial handlers.
+- Use `useCallback` for handlers passed to memoized children.
+- Properly type event parameters.
+
+```typescript
+interface FormProps {
+  onSubmit: (data: FormData) => void
+}
+
+export function Form({ onSubmit }: FormProps) {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const formData = new FormData(event.currentTarget)
+    onSubmit(formData)
+  }
+  
+  return <form onSubmit={handleSubmit}>...</form>
+}
+```
+
+## Forms
+
+- Use controlled components for form inputs.
+- Validate on submit, not on every keystroke (unless required).
+- Provide clear error messages.
+- Consider using a form library for complex forms.
+
+```typescript
+function LoginForm() {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    // Validation and submission logic
+  }
+  
+  return (
+    <form onSubmit={handleSubmit}>
+      <input 
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        aria-invalid={!!errors.email}
+      />
+      {errors.email && <span role="alert">{errors.email}</span>}
+    </form>
+  )
+}
+```
+
+## TypeScript with React
+
+### Component Types
+```typescript
+// Props interface
+interface ComponentProps {
+  title: string
+  count?: number
+  onAction: () => void
+  children?: ReactNode
+}
+
+// Component with props
+export function Component(props: ComponentProps): JSX.Element {
+  // Implementation
+}
+
+// Or with destructuring
+export function Component({ 
+  title, 
+  count = 0, 
+  onAction, 
+  children 
+}: ComponentProps): JSX.Element {
+  // Implementation
+}
+```
+
+### Event Types
+```typescript
+// Common event types
+onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
+onChange: (event: React.ChangeEvent<HTMLInputElement>) => void
+onSubmit: (event: React.FormEvent<HTMLFormElement>) => void
+onKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void
+```
+
+### Ref Types
+```typescript
+const inputRef = useRef<HTMLInputElement>(null)
+const divRef = useRef<HTMLDivElement>(null)
+const buttonRef = useRef<HTMLButtonElement>(null)
+```
+
+### Generic Components
+```typescript
+interface ListProps<T> {
+  items: T[]
+  renderItem: (item: T) => ReactNode
+}
+
+export function List<T extends { id: string }>({ 
+  items, 
+  renderItem 
+}: ListProps<T>) {
+  return (
+    <ul>
+      {items.map(item => (
+        <li key={item.id}>{renderItem(item)}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+## Performance Optimization
+
+### React.memo
+- Use to prevent unnecessary rerenders of expensive components.
+- Provide custom comparison function if needed.
+
+```typescript
+export const ExpensiveComponent = React.memo(({ data }: Props) => {
+  // Expensive rendering logic
+}, (prevProps, nextProps) => {
+  // Custom comparison - return true to skip rerender
+  return prevProps.data.id === nextProps.data.id
+})
+```
+
+### Code Splitting
+- Use React.lazy for route-based code splitting.
+- Wrap lazy components in Suspense.
+
+```typescript
+const Dashboard = React.lazy(() => import('./pages/Dashboard'))
+
+function App() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <Dashboard />
+    </Suspense>
+  )
+}
+```
+
+## Context API
+
+- Use Context sparingly for truly global state.
+- Provide default values in createContext.
+- Create custom hooks for consuming context.
+- Split contexts to avoid unnecessary rerenders.
+
+```typescript
+interface ThemeContextValue {
+  theme: 'light' | 'dark'
+  toggleTheme: () => void
+}
+
+const ThemeContext = createContext<ThemeContextValue | undefined>(undefined)
+
+export function ThemeProvider({ children }: { children: ReactNode }) {
+  const [theme, setTheme] = useState<'light' | 'dark'>('light')
+  
+  const toggleTheme = useCallback(() => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light')
+  }, [])
+  
+  const value = useMemo(() => ({ theme, toggleTheme }), [theme, toggleTheme])
+  
+  return (
+    <ThemeContext.Provider value={value}>
+      {children}
+    </ThemeContext.Provider>
+  )
+}
+
+export function useTheme() {
+  const context = useContext(ThemeContext)
+  if (!context) {
+    throw new Error('useTheme must be used within ThemeProvider')
+  }
+  return context
+}
+```
+
+## Error Handling
+
+### Error Boundaries
+- Wrap sections of app that might fail.
+- Provide fallback UI.
+- Log errors to monitoring service.
+
+```typescript
+interface ErrorBoundaryProps {
+  children: ReactNode
+  fallback?: ReactNode
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean
+  error?: Error
+}
+
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props)
+    this.state = { hasError: false }
+  }
+  
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error }
+  }
+  
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Error caught by boundary:', error, errorInfo)
+  }
+  
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback || <div>Something went wrong</div>
+    }
+    
+    return this.props.children
+  }
+}
+```
+
+## Accessibility
+
+- Use semantic HTML elements.
+- Provide ARIA labels when semantic HTML isn't sufficient.
+- Ensure keyboard navigation works.
+- Maintain visible focus indicators.
+- Test with screen readers.
+
+```typescript
+// Good - semantic and accessible
+<button 
+  onClick={handleClick}
+  disabled={isLoading}
+  aria-busy={isLoading}
+>
+  {isLoading ? 'Loading...' : 'Submit'}
+</button>
+
+// Add ARIA when needed
+<div 
+  role="button" 
+  tabIndex={0}
+  onClick={handleClick}
+  onKeyDown={(e) => e.key === 'Enter' && handleClick()}
+  aria-label="Close dialog"
+>
+  ×
+</div>
+```
+
+## Common Pitfalls to Avoid
+
+1. **Don't mutate state directly**
+   ```typescript
+   // Bad
+   user.name = 'John'
+   setUser(user)
+   
+   // Good
+   setUser({ ...user, name: 'John' })
+   ```
+
+2. **Don't forget cleanup in useEffect**
+   ```typescript
+   // Bad
+   useEffect(() => {
+     const interval = setInterval(() => tick(), 1000)
+   }, [])
+   
+   // Good
+   useEffect(() => {
+     const interval = setInterval(() => tick(), 1000)
+     return () => clearInterval(interval)
+   }, [])
+   ```
+
+3. **Don't use index as key for dynamic lists**
+4. **Don't call hooks conditionally**
+5. **Don't forget to memoize context values**
+6. **Don't over-optimize with useMemo/useCallback**
+7. **Don't put functions in dependency arrays (use useCallback)**
+
+## Testing React Components
+
+- Test user behavior, not implementation details.
+- Query by role, label, or text - not test IDs.
+- Use Testing Library's userEvent for interactions.
+- Mock API calls and external dependencies.
+
+```typescript
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+
+describe('LoginForm', () => {
+  it('submits form with user credentials', async () => {
+    const handleSubmit = vi.fn()
+    render(<LoginForm onSubmit={handleSubmit} />)
+    
+    await userEvent.type(
+      screen.getByLabelText(/email/i), 
+      'user@example.com'
+    )
+    await userEvent.type(
+      screen.getByLabelText(/password/i), 
+      'password123'
+    )
+    await userEvent.click(
+      screen.getByRole('button', { name: /sign in/i })
+    )
+    
+    expect(handleSubmit).toHaveBeenCalledWith({
+      email: 'user@example.com',
+      password: 'password123'
+    })
+  })
+})
+```
+
+## Project-Specific Patterns
+
+### Runtime Environment Access
+Always read configuration from `window.__ENV__`:
+
+```typescript
+const RUNTIME = (window as any).__ENV__ || {}
+const apiUrl = RUNTIME.APP_API_BASE_URL ?? 'http://localhost:8000'
+```
+
+### Protected Routes
+Use the ProtectedRoute wrapper for authenticated pages:
+
+```typescript
+<Route 
+  path="/dashboard" 
+  element={
+    <ProtectedRoute>
+      <Dashboard />
+    </ProtectedRoute>
+  } 
+/>
+```
+
+### API Calls
+Use the configured API client with automatic auth:
+
+```typescript
+import { apiClient } from '@/api/client'
+
+// Token automatically added via interceptor
+const response = await apiClient.get<User[]>('/users')
+```

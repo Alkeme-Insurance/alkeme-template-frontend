@@ -1,0 +1,449 @@
+---
+description: General Guidelines
+globs: 
+alwaysApply: true
+---
+# Assistant Rules
+
+**Your fundamental responsibility:** Remember you are a senior engineer and have a
+serious responsibility to be clear, factual, think step by step and be systematic,
+express expert opinion, and make use of the user's attention wisely.
+
+**Rules must be followed:** It is your responsibility to carefully read these rules as
+well as TypeScript or other language-specific rules included here.
+
+Therefore:
+
+- Be concise. State answers or responses directly, without extra commentary.
+  Or (if it is clear) directly do what is asked.
+
+- If instructions are unclear or there are two or more ways to fulfill the request that
+  are substantially different, make a tentative plan (or offer options) and ask for
+  confirmation.
+
+- If you can think of a much better approach that the user requests, be sure to mention
+  it. It's your responsibility to suggest approaches that lead to better, simpler
+  solutions.
+
+- Give thoughtful opinions on better/worse approaches, but NEVER say "great idea!"
+  or "good job" or other compliments, encouragement, or non-essential banter.
+  Your job is to give expert opinions and to solve problems, not to motivate the user.
+
+- Avoid gratuitous enthusiasm or generalizations.
+  Use thoughtful comparisons like saying which code is "cleaner" but don't congratulate
+  yourself. Avoid subjective descriptions.
+  For example, don't say "I've meticulously improved the code and it is in great shape!"
+  That is useless generalization.
+  Instead, specifically say what you've done, e.g., "I've added proper types to all
+  React components and fixed all ESLint errors."
+
+# General Coding Guidelines
+
+## Using Comments
+
+- Keep all comments concise and clear and suitable for inclusion in final production.
+
+- DO use comments whenever the intent of a given piece of code is subtle or confusing or
+  avoids a bug or is not obvious from the code itself.
+
+- DO NOT repeat in comments what is obvious from the names of functions or variables or
+  types.
+
+- DO NOT include comments that reflect what you did, such as "Added this function" as
+  this is meaningless to anyone reading the code later.
+  (Instead, describe in your message to the user any other contextual information.)
+
+- DO NOT use fancy or needlessly decorated headings like "===== MIGRATION TOOLS ====="
+  in comments
+
+- DO NOT number steps in comments.
+  These are hard to maintain if the code changes.
+  NEVER DO THIS: "// Step 3: Fetch the data from the cache"
+  This is fine: "// Now fetch the data from the cache"
+
+- DO NOT use emojis or special unicode characters like ① or • or – or — in comments.
+
+- Use emojis in output if it enhances the clarity and can be done consistently.
+  You may use ✔︎ and ✘ to indicate success and failure, and ∆ and ‼︎ for user-facing
+  warnings and errors, for example, but be sure to do it consistently.
+  DO NOT use emojis gratuitously in comments or output.
+  You may use them ONLY when they have clear meanings (like success or failure).
+  Unless the user says otherwise, avoid emojis and Unicode in comments as it clutters the
+  output with little benefit.
+
+---
+description: Project Guidelines
+globs:
+alwaysApply: true
+---
+
+## Project Summary
+
+React Frontend with TypeScript, Vite, and Tailwind CSS, designed for production deployment with Docker and Azure Container Apps.
+
+Key highlights include:
+- **Type-Safe Development** - Full TypeScript with strict mode for compile-time safety
+- **Runtime Configuration** - Environment injection at container startup (no rebuild needed)
+- **Production-Ready Patterns** - Component composition, custom hooks, and single responsibility principles
+- **Azure AD Authentication** - Optional MSAL.js integration for enterprise SSO
+
+## Tech Stack
+
+### Frontend
+- **React 18.3+** - Modern React with hooks and concurrent features
+- **TypeScript 5.6+** - Strict type checking and advanced type features
+- **Vite 5.4+** - Lightning-fast build tool and dev server
+- **Tailwind CSS 3.4+** - Utility-first CSS framework
+- **React Router 6.26+** - Client-side routing with protected routes
+
+### State & Data
+- **TanStack Query 5.59+** - Server state management and data fetching
+- **Axios 1.7+** - HTTP client with interceptors
+- **Azure MSAL** - Microsoft Authentication Library (optional)
+
+### Development & Tooling
+- **ESLint** - Code linting with TypeScript and React rules
+- **Prettier** - Code formatting with Tailwind plugin
+- **Vitest** - Fast unit testing framework
+- **Testing Library** - React component testing utilities
+- **Playwright** - End-to-end testing
+- **clsx + tailwind-merge** - Conditional CSS class utilities
+
+### Deployment
+- **Docker** - Multi-stage builds with Nginx
+- **Azure Container Apps** - Serverless container deployment
+- **GitHub Actions** - CI/CD pipeline
+- **Bicep** - Infrastructure as Code for Azure
+
+## Architecture Patterns
+
+### Component Structure
+- **Feature-First Organization** - Group by feature, not by type
+  - `src/app/` - Main application and routing
+  - `src/api/` - API clients and data fetching
+  - `src/auth/` - Authentication logic (MSAL)
+  - `src/components/ui/` - Reusable UI components
+  - `src/lib/` - Shared utilities
+  - `src/styles/` - Global styles and Tailwind config
+
+### Design Principles
+- **Component Composition** - Build complex UIs from simple components
+- **Custom Hooks** - Extract reusable logic into hooks
+- **Single Responsibility** - Each component/function should do one thing well
+- **Props Over State** - Prefer controlled components
+- **Type Safety** - Use TypeScript interfaces and types everywhere
+
+### Runtime Configuration
+- **Environment Injection** - Read from `window.__ENV__` at runtime
+- **No Rebuild Required** - Change `.env` and restart container
+- **Docker Entrypoint** - Generates `/env.js` with whitelisted variables
+- **Security First** - Never expose secrets or backend tokens to client
+
+## Code Conventions
+
+### Naming & Style
+- **Components**: `PascalCase` for React components (e.g., `UserProfile`, `LoginButton`)
+- **Hooks**: `camelCase` with `use` prefix (e.g., `useAuth`, `useApiClient`)
+- **Functions**: `camelCase` for functions (e.g., `fetchUserData`, `handleSubmit`)
+- **Variables**: `camelCase` for mutable, `UPPER_CASE` for constants
+- **Files**: `PascalCase.tsx` for components, `camelCase.ts` for utilities
+- **Interfaces/Types**: `PascalCase` with `I` prefix optional (e.g., `User`, `ApiResponse<T>`)
+
+### TypeScript Usage
+- **Strict Mode**: Always enabled - no `any` without explicit justification
+- **Type Inference**: Let TypeScript infer when obvious, be explicit when helpful
+- **Generics**: Use for reusable components and functions
+- **`satisfies`**: Prefer over type assertions for type narrowing
+- **Discriminated Unions**: Use for state management and conditional rendering
+- **Type Guards**: Create custom type guards for runtime checks
+
+### Component Design
+- **Functional Components**: Always use function components with hooks
+- **Props Interface**: Define explicit interface for all component props
+- **Default Props**: Use default parameters, not `defaultProps`
+- **Children**: Use `ReactNode` type for children prop
+- **Refs**: Use `forwardRef` when exposing refs to parent components
+- **Memoization**: Use `React.memo()`, `useMemo()`, `useCallback()` judiciously
+
+### React Patterns
+- **Controlled Components**: Prefer controlled over uncontrolled
+- **Lifting State**: Lift state only when needed, not preemptively
+- **Composition Over Inheritance**: Use composition patterns
+- **Render Props**: Use when multiple consumers need same logic
+- **Higher-Order Components**: Avoid in favor of hooks
+- **Context**: Use sparingly for truly global state
+
+### Styling
+- **Tailwind Utilities**: Use utility classes, avoid custom CSS when possible
+- **Conditional Classes**: Use `cn()` utility (clsx + tailwind-merge)
+- **Component Variants**: Use Tailwind variants for state (hover, focus, dark mode)
+- **Responsive Design**: Mobile-first with responsive breakpoints
+- **Dark Mode**: Use Tailwind's `dark:` variant when applicable
+
+### API Integration
+- **Runtime Config**: Read base URL from `window.__ENV__.APP_API_BASE_URL`
+- **Axios Interceptors**: Add auth tokens in request interceptor
+- **Error Handling**: Handle errors in response interceptor
+- **Type Safety**: Define types for API responses
+- **TanStack Query**: Use for server state, not local state
+
+### Authentication (Azure AD)
+- **MSAL Configuration**: Read from `window.__ENV__` runtime variables
+- **Token Acquisition**: Use `acquireTokenSilent()` with fallback to interactive
+- **Protected Routes**: Use `ProtectedRoute` component wrapper
+- **Dev Mode**: Support `APP_DEV_NO_AUTH=true` for local development
+- **Error Handling**: Handle `InteractionRequiredAuthError` gracefully
+
+### State Management
+- **Local State**: `useState` for component-local state
+- **Derived State**: Compute from props/state, don't store
+- **Server State**: TanStack Query for API data
+- **Global State**: Context API for truly global state (auth, theme)
+- **Form State**: Controlled components or form libraries
+
+### Testing
+- **Unit Tests**: Vitest + Testing Library for components
+- **Test Behavior**: Test what users see and do, not implementation
+- **Mocking**: Mock API calls, external dependencies
+- **Snapshots**: Use sparingly, prefer explicit assertions
+- **E2E Tests**: Playwright for critical user flows
+
+### Error Handling
+- **Error Boundaries**: Wrap app sections to catch rendering errors
+- **Try-Catch**: For async operations (API calls, auth)
+- **User Feedback**: Show meaningful error messages
+- **Logging**: Console errors in development, structured logs in production
+- **Graceful Degradation**: App should work with missing features
+
+### Performance
+- **Code Splitting**: Use React.lazy() for route-based splitting
+- **Memoization**: Only when profiling shows benefit
+- **Virtual Lists**: For long lists (use libraries like react-window)
+- **Image Optimization**: Use proper formats, lazy loading, srcset
+- **Bundle Size**: Monitor and optimize bundle size
+
+### Accessibility
+- **Semantic HTML**: Use correct HTML elements
+- **ARIA Labels**: Add when semantic HTML isn't sufficient
+- **Keyboard Navigation**: All interactive elements keyboard accessible
+- **Focus Management**: Visible focus indicators
+- **Screen Readers**: Test with screen readers
+
+### Security
+- **XSS Prevention**: Never use `dangerouslySetInnerHTML` without sanitization
+- **CSRF**: Handled by SameSite cookies and Azure AD
+- **Secrets**: Never commit secrets, use environment variables
+- **Content Security Policy**: Configure in nginx.conf
+- **Input Validation**: Validate on backend, sanitize on frontend
+
+### Docker & Deployment
+- **Runtime Environment**: All config from `window.__ENV__`
+- **No Rebuild**: Configuration changes don't require rebuild
+- **Healthcheck**: `/health` endpoint for container orchestration
+- **Static Assets**: Nginx serves with proper caching headers
+- **SPA Routing**: Nginx `try_files` for client-side routing
+
+## Code Organization
+
+### File Structure
+```
+src/
+├── main.tsx                 # Application entry point
+├── app/
+│   ├── App.tsx             # Root component with routing
+│   ├── pages/              # Page components
+│   └── components/         # Feature-specific components
+├── api/
+│   └── client.ts           # API client with runtime config
+├── auth/
+│   └── msalConfig.ts       # MSAL configuration
+├── components/
+│   └── ui/                 # Reusable UI components
+├── lib/
+│   └── utils.ts            # Shared utilities
+├── styles/
+│   └── index.css           # Global styles + Tailwind
+└── test/
+    └── setup.ts            # Test configuration
+```
+
+### Import Order
+1. React and React-related imports
+2. Third-party libraries
+3. Internal utilities and components
+4. Types and interfaces
+5. Styles
+
+### Barrel Exports
+- Avoid barrel exports (`index.ts`) except for `components/ui/`
+- Prefer explicit imports for better tree-shaking
+
+## Development Workflow
+
+### Local Development
+```bash
+pnpm dev                    # Start dev server
+pnpm lint                   # Run linter
+pnpm typecheck              # Check types
+pnpm test                   # Run unit tests
+```
+
+### Docker Development
+```bash
+docker compose up --build   # Run with Docker
+# Edit .env, restart container - no rebuild needed
+```
+
+### Code Quality
+- All code must pass ESLint with no warnings
+- All code must pass TypeScript compiler with no errors
+- All tests must pass before committing
+- Run Prettier before committing
+
+### Git Workflow
+- Write meaningful commit messages
+- Keep commits atomic and focused
+- Use pre-commit hooks for linting and formatting
+
+## Common Patterns
+
+### Runtime Environment Access
+```typescript
+const RUNTIME = (window as any).__ENV__ || {}
+const apiUrl = RUNTIME.APP_API_BASE_URL ?? 'http://localhost:8000'
+```
+
+### Protected Routes
+```typescript
+<Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
+```
+
+### API Calls with Auth
+```typescript
+// Token automatically added in axios interceptor
+const data = await apiClient.get<User[]>('/users')
+```
+
+### Conditional Rendering
+```typescript
+{isAuthenticated && <UserProfile />}
+{isLoading ? <Spinner /> : <Content />}
+```
+
+### Class Name Utilities
+```typescript
+import { cn } from '@/lib/utils'
+const classes = cn('base-class', isActive && 'active-class')
+```
+
+## Documentation
+- **README**: Setup instructions and project overview
+- **Type Definitions**: Types serve as inline documentation
+- **Comments**: Explain complex logic, not obvious code
+- **JSDoc**: Use for public APIs and complex functions
+
+---
+description: Python Coding Guidelines
+globs: *.py,pyproject.toml
+alwaysApply: false
+---
+# Python Coding Guidelines
+
+These are rules for Python tooling in this project (pre-commit, detect-secrets, uv).
+
+## Python Version
+
+Write for Python 3.10-3.13. Always use modern Python practices.
+Always use full type annotations, generics, and other modern practices.
+
+## Project Setup and Developer Workflows
+
+- ALWAYS use uv for running Python code and managing dependencies.
+  Never use direct `pip` or `python` commands.
+
+- Use modern uv commands: `uv sync`, `uv run ...`, etc.
+  Prefer `uv add` over `uv pip install`.
+
+- Always run linting and type checking before committing.
+
+- You must verify there are zero linter warnings/errors before considering any task complete.
+
+## Coding Conventions and Imports
+
+- Always use full, absolute imports for paths.
+  Do NOT use `from .module import ...`. Use `from package.module import ...` instead.
+
+- Import types from correct modules (`collections.abc`, `typing_extensions`).
+  Example: `from collections.abc import Callable, Coroutine`
+
+- Use `typing_extensions` for `@override` (supports Python 3.10+).
+
+- Add `from __future__ import annotations` on files with types.
+
+- Use pathlib `Path` instead of strings.
+
+## Modern Python Practices
+
+- ALWAYS use `@override` decorators to override methods from base classes.
+
+- Use modern union syntax: `str | None` instead of `Optional[str]`
+  Use `dict[str]` instead of `Dict[str]`, `list[str]` instead of `List[str]`
+
+- Never use/import `Optional` for new code.
+
+- Use modern enums like `StrEnum` when appropriate.
+
+## Types and Type Annotations
+
+- Use full type hints on all function signatures and return types.
+
+- Use generics where appropriate for reusable code.
+
+- If type checker errors are hard to resolve, you may add `# pyright: ignore` 
+  but ONLY if you know they are not a real problem.
+
+## Guidelines for Comments
+
+- Comments should be EXPLANATORY: Explain *WHY* something is done, not *what*.
+
+- Comments should be CONCISE: Remove all extraneous words.
+
+- DO NOT use comments to state obvious things or repeat what is evident from code.
+
+## Guidelines for Docstrings
+
+- Use concise docstrings with triple quotes on their own lines.
+
+- Use `backticks` around variable names and inline code.
+
+- Docstrings should provide context or explain "why", not obvious details evident 
+  from names and types.
+
+- Avoid obvious or repetitive docstrings.
+
+- Do NOT list args and return values if they're obvious from type annotations.
+
+- Exported/public functions SHOULD have concise docstrings.
+  Internal functions DO NOT need docstrings unless their purpose is not obvious.
+
+## Guidelines for Literal Strings
+
+- For multi-line strings, ALWAYS use `dedent()` for readability:
+  ```python
+  from textwrap import dedent
+  content = dedent("""
+      Line 1
+      Line 2
+      """).strip()
+  ```
+
+## General Clean Coding Practices
+
+- Avoid writing trivial wrapper functions.
+
+- Keep functions focused and single-purpose.
+
+- Use guard clauses and early returns for error handling.
+
+- Prefer composition over inheritance.
+
