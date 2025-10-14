@@ -1,0 +1,183 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20'
+  AZURE_RESOURCE_GROUP: {{ package_name }}-rg
+  AZURE_LOCATION: eastus
+  CONTAINER_APP_NAME: ca-{{ package_name }}-{% raw %}${{ github.ref_name == 'main' && 'prod' || 'dev' }}{% endraw %}
+
+jobs:
+  lint-type-test:
+    name: Lint, Type Check & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: {% raw %}${{ env.NODE_VERSION }}{% endraw %}
+          cache: '{{ package_manager }}'
+
+      - name: Install dependencies
+        run: {{ package_manager }} install
+
+      - name: Run linter
+        run: {{ package_manager }} lint
+
+      - name: Run type check
+        run: {{ package_manager }} typecheck
+
+      - name: Run tests
+        run: {{ package_manager }} test
+
+      - name: Run test coverage
+        run: {{ package_manager }} test:coverage
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        if: {% raw %}${{ github.event_name == 'push' }}{% endraw %}
+        with:
+          files: ./coverage/coverage-final.json
+          flags: unittests
+        continue-on-error: true
+
+  build-image:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: lint-type-test
+    if: {% raw %}${{ github.event_name == 'push' }}{% endraw %}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: {{ package_name }}:{% raw %}${{ github.sha }}{% endraw %}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy-azure:
+    name: Deploy to Azure
+    runs-on: ubuntu-latest
+    needs: [lint-type-test, build-image]
+    if: {% raw %}${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') }}{% endraw %}
+    environment:
+      name: {% raw %}${{ github.ref_name == 'main' && 'production' || 'development' }}{% endraw %}
+      url: {% raw %}${{ steps.deploy.outputs.url }}{% endraw %}
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: {% raw %}${{ secrets.AZURE_CLIENT_ID }}{% endraw %}
+          tenant-id: {% raw %}${{ secrets.AZURE_TENANT_ID }}{% endraw %}
+          subscription-id: {% raw %}${{ secrets.AZURE_SUBSCRIPTION_ID }}{% endraw %}
+
+      - name: Login to Azure Container Registry
+        run: |
+          az acr login --name {% raw %}${{ secrets.ACR_NAME }}{% endraw %}
+
+      - name: Build and push Docker image
+        run: |
+          IMAGE_TAG="{% raw %}${{ secrets.ACR_LOGIN_SERVER }}{% endraw %}/{{ package_name }}:{% raw %}${{ github.sha }}{% endraw %}"
+          IMAGE_TAG_LATEST="{% raw %}${{ secrets.ACR_LOGIN_SERVER }}{% endraw %}/{{ package_name }}:latest"
+          
+          docker build -t "$IMAGE_TAG" -t "$IMAGE_TAG_LATEST" .
+          docker push "$IMAGE_TAG"
+          docker push "$IMAGE_TAG_LATEST"
+          
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+
+      - name: Deploy infrastructure and update Container App
+        id: deploy
+        run: |
+          # Set environment name
+          ENV_NAME="{% raw %}${{ github.ref_name == 'main' && 'prod' || 'dev' }}{% endraw %}"
+          
+          # Deploy Bicep template
+          az deployment group create \
+            --name "deployment-{% raw %}${{ github.run_number }}{% endraw %}" \
+            --resource-group {% raw %}${{ env.AZURE_RESOURCE_GROUP }}{% endraw %} \
+            --template-file infra/main.bicep \
+            --parameters \
+              projectName={{ package_name }} \
+              environmentName="$ENV_NAME" \
+              location={% raw %}${{ env.AZURE_LOCATION }}{% endraw %} \
+              containerImage="${IMAGE_TAG}" \
+              azureClientId="{% raw %}${{ secrets.APP_AZURE_CLIENT_ID }}{% endraw %}" \
+              azureTenantId="{% raw %}${{ secrets.APP_AZURE_TENANT_ID }}{% endraw %}" \
+              apiBaseUrl="{% raw %}${{ secrets.APP_API_BASE_URL }}{% endraw %}" \
+              azureApiScope="{% raw %}${{ secrets.APP_AZURE_API_SCOPE }}{% endraw %}" \
+              devNoAuth={% raw %}${{ github.ref_name != 'main' }}{% endraw %}
+          
+          # Get Container App URL
+          APP_URL=$(az containerapp show \
+            --name {% raw %}${{ env.CONTAINER_APP_NAME }}{% endraw %} \
+            --resource-group {% raw %}${{ env.AZURE_RESOURCE_GROUP }}{% endraw %} \
+            --query properties.configuration.ingress.fqdn \
+            --output tsv)
+          
+          echo "url=https://$APP_URL" >> $GITHUB_OUTPUT
+          echo "### 🚀 Deployment Successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** $ENV_NAME" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** https://$APP_URL" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** ${IMAGE_TAG}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Comment PR with deployment info
+        if: {% raw %}${{ github.event_name == 'pull_request' }}{% endraw %}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.name,
+              body: '🚀 **Deployment successful!**\n\n' +
+                    '**Environment:** {% raw %}${{ github.ref_name == \'main\' && \'production\' || \'development\' }}{% endraw %}\n' +
+                    '**URL:** {% raw %}${{ steps.deploy.outputs.url }}{% endraw %}\n' +
+                    '**Image:** {% raw %}${{ env.IMAGE_TAG }}{% endraw %}'
+            })
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: lint-type-test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+

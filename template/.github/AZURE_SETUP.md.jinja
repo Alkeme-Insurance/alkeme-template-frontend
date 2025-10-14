@@ -1,0 +1,345 @@
+# Azure Setup Guide
+
+This guide walks you through setting up Azure resources and GitHub secrets for CI/CD deployment of {{ project_name }}.
+
+## Prerequisites
+
+- Azure subscription
+- Azure CLI installed (`az --version`)
+- GitHub repository for your project
+- Owner or Contributor role on Azure subscription
+
+## Step 1: Login to Azure
+
+```bash
+az login
+az account list --output table
+az account set --subscription "YOUR_SUBSCRIPTION_ID"
+```
+
+## Step 2: Create Resource Group
+
+```bash
+RESOURCE_GROUP="{{ package_name }}-rg"
+LOCATION="eastus"
+
+az group create \
+  --name $RESOURCE_GROUP \
+  --location $LOCATION
+```
+
+## Step 3: Create Service Principal for GitHub Actions
+
+Create a service principal with Contributor role on the resource group:
+
+```bash
+APP_NAME="{{ package_name }}-github-sp"
+SUBSCRIPTION_ID=$(az account show --query id --output tsv)
+
+# Create service principal
+SP_OUTPUT=$(az ad sp create-for-rbac \
+  --name $APP_NAME \
+  --role Contributor \
+  --scopes /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP \
+  --sdk-auth \
+  --output json)
+
+echo "$SP_OUTPUT"
+```
+
+**Save the entire JSON output** - you'll need it for GitHub secrets.
+
+The output will look like:
+```json
+{
+  "clientId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "clientSecret": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "subscriptionId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "tenantId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  ...
+}
+```
+
+## Step 4: Deploy Initial Infrastructure
+
+Deploy the infrastructure for the first time:
+
+```bash
+cd infra
+
+# Update main.bicepparam with your values
+# Then deploy:
+./deploy.sh
+```
+
+This will create:
+- Azure Container Registry (ACR)
+- Log Analytics Workspace
+- Application Insights
+- Managed Identity
+- Container App Environment
+- Container App
+
+## Step 5: Get ACR Details
+
+```bash
+# Get ACR name (created by Bicep)
+ACR_NAME=$(az acr list \
+  --resource-group $RESOURCE_GROUP \
+  --query "[0].name" \
+  --output tsv)
+
+# Get ACR login server
+ACR_LOGIN_SERVER=$(az acr show \
+  --name $ACR_NAME \
+  --query loginServer \
+  --output tsv)
+
+echo "ACR Name: $ACR_NAME"
+echo "ACR Login Server: $ACR_LOGIN_SERVER"
+```
+
+## Step 6: Configure GitHub Secrets
+
+Go to your GitHub repository → Settings → Secrets and variables → Actions
+
+Add the following secrets:
+
+### Azure Authentication Secrets
+
+| Secret Name | Value | How to Get |
+|------------|-------|------------|
+| `AZURE_CLIENT_ID` | Service Principal Client ID | From Step 3 JSON output |
+| `AZURE_CLIENT_SECRET` | Service Principal Secret | From Step 3 JSON output |
+| `AZURE_TENANT_ID` | Azure AD Tenant ID | From Step 3 JSON output |
+| `AZURE_SUBSCRIPTION_ID` | Azure Subscription ID | `az account show --query id -o tsv` |
+
+### Azure Container Registry Secrets
+
+| Secret Name | Value | How to Get |
+|------------|-------|------------|
+| `ACR_NAME` | Container Registry name | From Step 5 |
+| `ACR_LOGIN_SERVER` | ACR login server URL | From Step 5 |
+
+### Application Configuration Secrets
+
+{% if use_azure_auth -%}
+| Secret Name | Value | Description |
+|------------|-------|-------------|
+| `APP_AZURE_CLIENT_ID` | Your Azure AD App Client ID | From Azure AD app registration |
+| `APP_AZURE_TENANT_ID` | Your Azure AD Tenant ID | From Azure AD |
+| `APP_AZURE_API_SCOPE` | API scope (optional) | e.g., `api://your-app-id/access_as_user` |
+| `APP_API_BASE_URL` | Backend API URL | Your backend API endpoint |
+{%- else -%}
+| Secret Name | Value | Description |
+|------------|-------|-------------|
+| `APP_API_BASE_URL` | Backend API URL | Your backend API endpoint |
+{%- endif %}
+
+## Step 7: Grant ACR Push Permission to Service Principal
+
+The service principal needs permission to push images to ACR:
+
+```bash
+# Get service principal ID
+SP_ID=$(az ad sp list \
+  --display-name $APP_NAME \
+  --query "[0].id" \
+  --output tsv)
+
+# Get ACR ID
+ACR_ID=$(az acr show \
+  --name $ACR_NAME \
+  --query id \
+  --output tsv)
+
+# Assign AcrPush role
+az role assignment create \
+  --assignee $SP_ID \
+  --role AcrPush \
+  --scope $ACR_ID
+
+echo "✓ Service principal granted AcrPush permission"
+```
+
+## Step 8: Test the CI/CD Pipeline
+
+Push code to trigger the GitHub Actions workflow:
+
+```bash
+git add .
+git commit -m "chore: trigger CI/CD pipeline"
+git push origin main
+```
+
+Monitor the workflow in GitHub Actions tab.
+
+## Step 9: Verify Deployment
+
+Once the pipeline completes:
+
+```bash
+# Get Container App URL
+CONTAINER_APP_URL=$(az containerapp show \
+  --name ca-{{ package_name }}-prod \
+  --resource-group $RESOURCE_GROUP \
+  --query properties.configuration.ingress.fqdn \
+  --output tsv)
+
+echo "Application URL: https://$CONTAINER_APP_URL"
+
+# Open in browser
+open "https://$CONTAINER_APP_URL"
+```
+
+## Troubleshooting
+
+### Authentication Issues
+
+If GitHub Actions fails with authentication errors:
+
+1. Verify the service principal credentials:
+```bash
+az login --service-principal \
+  --username $CLIENT_ID \
+  --password $CLIENT_SECRET \
+  --tenant $TENANT_ID
+```
+
+2. Check service principal roles:
+```bash
+az role assignment list \
+  --assignee $CLIENT_ID \
+  --output table
+```
+
+### ACR Permission Issues
+
+If image push fails:
+
+```bash
+# Verify ACR permissions
+az acr show \
+  --name $ACR_NAME \
+  --query "identity"
+```
+
+### Container App Issues
+
+View Container App logs:
+
+```bash
+az containerapp logs show \
+  --name ca-{{ package_name }}-prod \
+  --resource-group $RESOURCE_GROUP \
+  --follow
+```
+
+View Container App revisions:
+
+```bash
+az containerapp revision list \
+  --name ca-{{ package_name }}-prod \
+  --resource-group $RESOURCE_GROUP \
+  --output table
+```
+
+## Updating the Deployment
+
+### Update Environment Variables
+
+```bash
+az containerapp update \
+  --name ca-{{ package_name }}-prod \
+  --resource-group $RESOURCE_GROUP \
+  --set-env-vars "APP_API_BASE_URL=https://new-api.example.com"
+```
+
+### Manual Image Deployment
+
+```bash
+# Build and push manually
+az acr login --name $ACR_NAME
+docker build -t $ACR_LOGIN_SERVER/{{ package_name }}:manual .
+docker push $ACR_LOGIN_SERVER/{{ package_name }}:manual
+
+# Update Container App
+az containerapp update \
+  --name ca-{{ package_name }}-prod \
+  --resource-group $RESOURCE_GROUP \
+  --image $ACR_LOGIN_SERVER/{{ package_name }}:manual
+```
+
+### Scale the Container App
+
+```bash
+az containerapp update \
+  --name ca-{{ package_name }}-prod \
+  --resource-group $RESOURCE_GROUP \
+  --min-replicas 2 \
+  --max-replicas 10
+```
+
+## Monitoring
+
+### Application Insights
+
+View application metrics and logs in Azure Portal:
+
+```bash
+AI_NAME=$(az monitor app-insights component list \
+  --resource-group $RESOURCE_GROUP \
+  --query "[0].name" \
+  --output tsv)
+
+echo "Application Insights: https://portal.azure.com/#resource/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/microsoft.insights/components/$AI_NAME"
+```
+
+### Container App Metrics
+
+```bash
+az containerapp show \
+  --name ca-{{ package_name }}-prod \
+  --resource-group $RESOURCE_GROUP \
+  --query "properties.configuration.{replicas:replicas,ingress:ingress}"
+```
+
+## Cost Management
+
+Estimate monthly costs:
+- **Container App**: ~$30-50/month (based on usage)
+- **Container Registry (Basic)**: ~$5/month
+- **Log Analytics**: ~$2-10/month (based on data ingestion)
+- **Application Insights**: First 5GB free, then ~$2/GB
+
+**Total**: ~$40-70/month for development/staging environment
+
+To reduce costs:
+- Use single environment for dev/staging
+- Set Container App min replicas to 0 for dev
+- Adjust Log Analytics retention period
+- Clean up unused images in ACR
+
+## Security Best Practices
+
+1. **Rotate Service Principal Secrets** every 90 days
+2. **Use Managed Identity** where possible (already configured for ACR pull)
+3. **Enable Container Registry scanning** for vulnerabilities
+4. **Review RBAC permissions** regularly
+5. **Use Azure Key Vault** for sensitive configuration (optional upgrade)
+
+## Next Steps
+
+- Set up custom domain for Container App
+- Configure Azure Front Door for global CDN
+- Set up staging environment
+- Configure automated backups
+- Implement blue/green deployments
+
+## Additional Resources
+
+- [Azure Container Apps Documentation](https://learn.microsoft.com/en-us/azure/container-apps/)
+- [Azure Container Registry Documentation](https://learn.microsoft.com/en-us/azure/container-registry/)
+- [GitHub Actions with Azure](https://learn.microsoft.com/en-us/azure/developer/github/github-actions)
+- [Azure Bicep Documentation](https://learn.microsoft.com/en-us/azure/azure-resource-manager/bicep/)
+

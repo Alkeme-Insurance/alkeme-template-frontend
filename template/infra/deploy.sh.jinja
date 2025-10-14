@@ -1,0 +1,115 @@
+#!/bin/bash
+set -e
+
+# {{ project_name }} - Azure Deployment Script
+
+# Configuration
+RESOURCE_GROUP="{{ package_name }}-rg"
+LOCATION="eastus"
+DEPLOYMENT_NAME="{{ package_name }}-deployment-$(date +%Y%m%d-%H%M%S)"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+echo -e "${GREEN}========================================${NC}"
+echo -e "${GREEN}{{ project_name }} - Azure Deployment${NC}"
+echo -e "${GREEN}========================================${NC}"
+echo ""
+
+# Check if Azure CLI is installed
+if ! command -v az &> /dev/null; then
+    echo -e "${RED}Error: Azure CLI is not installed${NC}"
+    echo "Please install it from: https://docs.microsoft.com/en-us/cli/azure/install-azure-cli"
+    exit 1
+fi
+
+# Check if user is logged in
+echo -e "${YELLOW}Checking Azure CLI login status...${NC}"
+az account show &> /dev/null || {
+    echo -e "${YELLOW}Not logged in. Please login to Azure...${NC}"
+    az login
+}
+
+# Show current subscription
+SUBSCRIPTION_NAME=$(az account show --query name -o tsv)
+SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+echo -e "${GREEN}Current subscription:${NC} $SUBSCRIPTION_NAME ($SUBSCRIPTION_ID)"
+echo ""
+
+# Prompt for subscription change
+read -p "Do you want to use a different subscription? (y/N): " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    az account list --output table
+    read -p "Enter subscription ID: " SUBSCRIPTION_ID
+    az account set --subscription "$SUBSCRIPTION_ID"
+    echo -e "${GREEN}Switched to subscription:${NC} $(az account show --query name -o tsv)"
+fi
+
+echo ""
+
+# Create resource group if it doesn't exist
+echo -e "${YELLOW}Creating resource group if it doesn't exist...${NC}"
+az group create \
+    --name "$RESOURCE_GROUP" \
+    --location "$LOCATION" \
+    --output none
+
+echo -e "${GREEN}✓ Resource group ready:${NC} $RESOURCE_GROUP"
+echo ""
+
+# Deploy Bicep template
+echo -e "${YELLOW}Deploying infrastructure (this may take 5-10 minutes)...${NC}"
+echo -e "${YELLOW}Deployment name:${NC} $DEPLOYMENT_NAME"
+echo ""
+
+DEPLOYMENT_OUTPUT=$(az deployment group create \
+    --name "$DEPLOYMENT_NAME" \
+    --resource-group "$RESOURCE_GROUP" \
+    --template-file main.bicep \
+    --parameters main.bicepparam \
+    --output json)
+
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}✓ Deployment completed successfully!${NC}"
+    echo ""
+    
+    # Extract outputs
+    CONTAINER_APP_URL=$(echo "$DEPLOYMENT_OUTPUT" | jq -r '.properties.outputs.containerAppUrl.value')
+    CONTAINER_APP_FQDN=$(echo "$DEPLOYMENT_OUTPUT" | jq -r '.properties.outputs.containerAppFqdn.value')
+    ACR_LOGIN_SERVER=$(echo "$DEPLOYMENT_OUTPUT" | jq -r '.properties.outputs.containerRegistryLoginServer.value')
+    ACR_NAME=$(echo "$DEPLOYMENT_OUTPUT" | jq -r '.properties.outputs.containerRegistryName.value')
+    APP_INSIGHTS_KEY=$(echo "$DEPLOYMENT_OUTPUT" | jq -r '.properties.outputs.appInsightsInstrumentationKey.value')
+    
+    echo -e "${GREEN}========================================${NC}"
+    echo -e "${GREEN}Deployment Outputs${NC}"
+    echo -e "${GREEN}========================================${NC}"
+    echo -e "${GREEN}Container App URL:${NC} $CONTAINER_APP_URL"
+    echo -e "${GREEN}Container App FQDN:${NC} $CONTAINER_APP_FQDN"
+    echo -e "${GREEN}Container Registry:${NC} $ACR_LOGIN_SERVER"
+    echo -e "${GREEN}ACR Name:${NC} $ACR_NAME"
+    echo -e "${GREEN}App Insights Key:${NC} $APP_INSIGHTS_KEY"
+    echo ""
+    
+    echo -e "${YELLOW}Next steps:${NC}"
+    echo "1. Build and push your Docker image:"
+    echo "   az acr login --name $ACR_NAME"
+    echo "   docker build -t $ACR_LOGIN_SERVER/{{ package_name }}:latest ."
+    echo "   docker push $ACR_LOGIN_SERVER/{{ package_name }}:latest"
+    echo ""
+    echo "2. Update the Container App with the new image:"
+    echo "   az containerapp update \\"
+    echo "     --name <container-app-name> \\"
+    echo "     --resource-group $RESOURCE_GROUP \\"
+    echo "     --image $ACR_LOGIN_SERVER/{{ package_name }}:latest"
+    echo ""
+    echo "3. Visit your application at: $CONTAINER_APP_URL"
+else
+    echo -e "${RED}✗ Deployment failed${NC}"
+    echo "Check the error message above for details"
+    exit 1
+fi
+

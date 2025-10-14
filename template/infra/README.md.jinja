@@ -1,0 +1,435 @@
+# Azure Infrastructure
+
+This directory contains Azure Bicep templates for deploying {{ project_name }} to Azure Container Apps.
+
+## 📁 Structure
+
+```
+infra/
+├── main.bicep                      # Main orchestration template
+├── main.bicepparam                 # Parameter file
+├── deploy.sh                       # Interactive deployment script
+├── modules/
+│   ├── container-registry.bicep    # Azure Container Registry
+│   ├── container-app.bicep         # Container App + Environment
+│   ├── log-analytics.bicep         # Log Analytics Workspace
+│   ├── app-insights.bicep          # Application Insights
+│   └── managed-identity.bicep      # User-assigned identity
+└── README.md                       # This file
+```
+
+## 🏗️ Architecture
+
+The infrastructure deploys the following Azure resources:
+
+```
+┌─────────────────────────────────────────────────────┐
+│             Azure Resource Group                     │
+│                                                      │
+│  ┌──────────────────────────────────────────────┐  │
+│  │      Container App Environment               │  │
+│  │  ┌────────────────────────────────────────┐ │  │
+│  │  │     Container App                       │ │  │
+│  │  │  ┌──────────────────────────────────┐  │ │  │
+│  │  │  │   {{ project_name }}             │  │ │  │
+│  │  │  │   (Nginx + React SPA)            │  │ │  │
+│  │  │  └──────────────────────────────────┘  │ │  │
+│  │  │  • Auto-scaling (1-3 replicas)         │ │  │
+│  │  │  • HTTPS ingress                       │ │  │
+│  │  │  • Health checks                       │ │  │
+│  │  └────────────────────────────────────────┘ │  │
+│  └──────────────────────────────────────────────┘  │
+│                                                      │
+│  ┌──────────────────┐    ┌───────────────────────┐ │
+│  │ Container        │    │  Log Analytics        │ │
+│  │ Registry (ACR)   │    │  Workspace            │ │
+│  │                  │    │                       │ │
+│  │ • Docker images  │    │  • Container logs     │ │
+│  │ • Managed        │    │  • Metrics            │ │
+│  │   identity pull  │    │  • Retention: 30d     │ │
+│  └──────────────────┘    └───────────────────────┘ │
+│                                                      │
+│  ┌────────────────────────────────────────────────┐ │
+│  │          Application Insights                  │ │
+│  │  • Performance monitoring                      │ │
+│  │  • Error tracking                              │ │
+│  │  • User analytics                              │ │
+│  └────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────┘
+```
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Azure CLI (`az --version` >= 2.50.0)
+- Azure subscription
+- Bicep CLI (`az bicep version`)
+- Docker (for building images)
+
+### 1. Login to Azure
+
+```bash
+az login
+az account set --subscription "YOUR_SUBSCRIPTION_ID"
+```
+
+### 2. Update Parameters
+
+Edit `main.bicepparam` with your values:
+
+```bicep
+param projectName = '{{ package_name }}'
+param environmentName = 'dev'  // or 'staging', 'prod'
+param location = 'eastus'
+param containerImage = 'your-acr.azurecr.io/{{ package_name }}:latest'
+param azureClientId = 'your-azure-ad-client-id'
+param azureTenantId = 'your-azure-ad-tenant-id'
+param apiBaseUrl = 'https://api.yourdomain.com'
+```
+
+### 3. Deploy Infrastructure
+
+Using the interactive script:
+
+```bash
+cd infra
+chmod +x deploy.sh
+./deploy.sh
+```
+
+Or manually with Azure CLI:
+
+```bash
+RESOURCE_GROUP="{{ package_name }}-rg"
+LOCATION="eastus"
+
+# Create resource group
+az group create --name $RESOURCE_GROUP --location $LOCATION
+
+# Deploy Bicep template
+az deployment group create \
+  --name "{{ package_name }}-deployment" \
+  --resource-group $RESOURCE_GROUP \
+  --template-file main.bicep \
+  --parameters main.bicepparam
+```
+
+### 4. Build and Push Docker Image
+
+```bash
+# Get ACR name from deployment output
+ACR_NAME=$(az deployment group show \
+  --name "{{ package_name }}-deployment" \
+  --resource-group $RESOURCE_GROUP \
+  --query properties.outputs.containerRegistryName.value \
+  --output tsv)
+
+# Login to ACR
+az acr login --name $ACR_NAME
+
+# Build and push
+ACR_LOGIN_SERVER=$(az acr show --name $ACR_NAME --query loginServer -o tsv)
+docker build -t $ACR_LOGIN_SERVER/{{ package_name }}:latest ../
+docker push $ACR_LOGIN_SERVER/{{ package_name }}:latest
+```
+
+### 5. Update Container App
+
+```bash
+CONTAINER_APP_NAME=$(az deployment group show \
+  --name "{{ package_name }}-deployment" \
+  --resource-group $RESOURCE_GROUP \
+  --query properties.outputs.containerAppName.value \
+  --output tsv)
+
+az containerapp update \
+  --name $CONTAINER_APP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --image $ACR_LOGIN_SERVER/{{ package_name }}:latest
+```
+
+### 6. Access Your Application
+
+```bash
+APP_URL=$(az deployment group show \
+  --name "{{ package_name }}-deployment" \
+  --resource-group $RESOURCE_GROUP \
+  --query properties.outputs.containerAppUrl.value \
+  --output tsv)
+
+echo "Application URL: $APP_URL"
+open "$APP_URL"
+```
+
+## 🔧 Configuration
+
+### Environment-Specific Parameters
+
+Create separate parameter files for each environment:
+
+**main.dev.bicepparam** (Development):
+```bicep
+using './main.bicep'
+param projectName = '{{ package_name }}'
+param environmentName = 'dev'
+param devNoAuth = true
+param minReplicas = 1
+param maxReplicas = 2
+```
+
+**main.prod.bicepparam** (Production):
+```bicep
+using './main.bicep'
+param projectName = '{{ package_name }}'
+param environmentName = 'prod'
+param devNoAuth = false
+param minReplicas = 2
+param maxReplicas = 10
+param containerCpu = '1.0'
+param containerMemory = '2Gi'
+```
+
+Deploy with specific parameter file:
+```bash
+az deployment group create \
+  --template-file main.bicep \
+  --parameters main.prod.bicepparam
+```
+
+### Scaling Configuration
+
+Adjust scaling in `main.bicep` or override in parameter file:
+
+```bicep
+param minReplicas = 1        // Minimum number of replicas
+param maxReplicas = 3        // Maximum number of replicas
+param containerCpu = '0.5'   // CPU cores (0.25, 0.5, 0.75, 1.0, etc.)
+param containerMemory = '1Gi' // Memory (0.5Gi, 1Gi, 1.5Gi, 2Gi, etc.)
+```
+
+Update existing deployment:
+```bash
+az containerapp update \
+  --name $CONTAINER_APP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --min-replicas 2 \
+  --max-replicas 10 \
+  --cpu 1.0 \
+  --memory 2Gi
+```
+
+### Environment Variables
+
+Update Container App environment variables:
+
+```bash
+az containerapp update \
+  --name $CONTAINER_APP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --set-env-vars \
+    APP_API_BASE_URL=https://api.example.com \
+    APP_AZURE_CLIENT_ID=new-client-id
+```
+
+Or use secrets for sensitive values:
+
+```bash
+az containerapp secret set \
+  --name $CONTAINER_APP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --secrets azure-client-id=your-secret-value
+
+az containerapp update \
+  --name $CONTAINER_APP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --set-env-vars "APP_AZURE_CLIENT_ID=secretref:azure-client-id"
+```
+
+## 📊 Monitoring & Logging
+
+### View Container Logs
+
+```bash
+# Follow live logs
+az containerapp logs show \
+  --name $CONTAINER_APP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --follow
+
+# View recent logs
+az containerapp logs show \
+  --name $CONTAINER_APP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --tail 100
+```
+
+### Application Insights
+
+Access Application Insights in Azure Portal for:
+- Request telemetry
+- Performance metrics
+- Exception tracking
+- User analytics
+
+```bash
+# Get Application Insights connection string
+AI_CONN_STRING=$(az deployment group show \
+  --name "{{ package_name }}-deployment" \
+  --resource-group $RESOURCE_GROUP \
+  --query properties.outputs.appInsightsConnectionString.value \
+  --output tsv)
+
+echo "App Insights Connection String: $AI_CONN_STRING"
+```
+
+### Container App Metrics
+
+```bash
+# Show Container App status
+az containerapp show \
+  --name $CONTAINER_APP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --query "properties.{runningStatus:runningStatus,health:health,replicas:template.scale}"
+```
+
+## 🔄 Updates & Maintenance
+
+### Update Container Image
+
+```bash
+# Build new image
+docker build -t $ACR_LOGIN_SERVER/{{ package_name }}:v1.0.1 ../
+docker push $ACR_LOGIN_SERVER/{{ package_name }}:v1.0.1
+
+# Update Container App
+az containerapp update \
+  --name $CONTAINER_APP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --image $ACR_LOGIN_SERVER/{{ package_name }}:v1.0.1
+```
+
+### Rollback to Previous Revision
+
+```bash
+# List revisions
+az containerapp revision list \
+  --name $CONTAINER_APP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --output table
+
+# Activate previous revision
+az containerapp revision activate \
+  --name $CONTAINER_APP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --revision <revision-name>
+```
+
+### Update Infrastructure
+
+Modify Bicep files and redeploy:
+
+```bash
+az deployment group create \
+  --name "{{ package_name }}-update-$(date +%Y%m%d-%H%M%S)" \
+  --resource-group $RESOURCE_GROUP \
+  --template-file main.bicep \
+  --parameters main.bicepparam
+```
+
+Bicep deployments are idempotent - only changed resources are updated.
+
+## 🧹 Cleanup
+
+### Delete All Resources
+
+```bash
+az group delete --name $RESOURCE_GROUP --yes --no-wait
+```
+
+### Delete Specific Resources
+
+```bash
+# Delete Container App only
+az containerapp delete \
+  --name $CONTAINER_APP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --yes
+
+# Delete Container Registry
+az acr delete \
+  --name $ACR_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --yes
+```
+
+## 💰 Cost Estimation
+
+Approximate monthly costs for different environments:
+
+**Development** (min replicas: 1, max: 2):
+- Container App: $15-30/month
+- Container Registry (Basic): $5/month
+- Log Analytics: $2-5/month
+- Application Insights: Free (< 5GB)
+- **Total: ~$25-40/month**
+
+**Production** (min replicas: 2, max: 10):
+- Container App: $60-200/month
+- Container Registry (Standard): $20/month
+- Log Analytics: $10-30/month
+- Application Insights: $5-20/month
+- **Total: ~$95-270/month**
+
+To reduce costs:
+- Use dev/staging shared environment
+- Set min replicas to 0 for non-prod
+- Adjust Log Analytics retention
+- Clean up old container images
+
+## 🔒 Security
+
+### Managed Identity
+
+The Container App uses a user-assigned managed identity to pull images from ACR without storing credentials.
+
+### Network Security
+
+- Container App ingress: HTTPS only
+- Internal communication: Encrypted
+- ACR: Private endpoint option available
+
+### Secrets Management
+
+For production, use Azure Key Vault:
+
+```bash
+# Create Key Vault
+az keyvault create \
+  --name {{ package_name }}-kv \
+  --resource-group $RESOURCE_GROUP
+
+# Store secret
+az keyvault secret set \
+  --vault-name {{ package_name }}-kv \
+  --name azure-client-id \
+  --value your-secret-value
+
+# Reference in Container App
+az containerapp update \
+  --name $CONTAINER_APP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --set-env-vars "APP_AZURE_CLIENT_ID=keyvaultref:https://{{ package_name }}-kv.vault.azure.net/secrets/azure-client-id,identityref:$MANAGED_IDENTITY_ID"
+```
+
+## 📚 Additional Resources
+
+- [Azure Container Apps Documentation](https://learn.microsoft.com/en-us/azure/container-apps/)
+- [Bicep Documentation](https://learn.microsoft.com/en-us/azure/azure-resource-manager/bicep/)
+- [Azure Container Registry](https://learn.microsoft.com/en-us/azure/container-registry/)
+- [Application Insights](https://learn.microsoft.com/en-us/azure/azure-monitor/app/app-insights-overview)
+
+## 🆘 Troubleshooting
+
+See [../.github/AZURE_SETUP.md](../.github/AZURE_SETUP.md#troubleshooting) for common issues and solutions.
+
