@@ -184,24 +184,6 @@ pnpm test:ui
 pnpm test:coverage
 ```
 
-### Playwright (E2E Testing)
-- Use for end-to-end browser testing.
-- Write tests in `e2e/` or `tests/e2e/` directory.
-
-```bash
-# Run E2E tests
-pnpm e2e
-
-# Run in UI mode
-pnpm e2e:ui
-
-# Run specific test file
-pnpm playwright test tests/e2e/login.spec.ts
-
-# Debug tests
-pnpm playwright test --debug
-```
-
 ## Git Hooks and Pre-commit
 
 ### pre-commit Framework
@@ -578,7 +560,6 @@ pnpm lint
 pnpm format:check
 pnpm typecheck
 pnpm test
-pnpm e2e
 ```
 
 ### CI Pipeline Commands
@@ -587,7 +568,6 @@ Ensure CI pipeline runs the same commands:
 - Formatting checks (ruff format, prettier)
 - Type checking (mypy, tsc)
 - Unit tests (pytest, vitest)
-- E2E tests (playwright)
 - Security scans (pre-commit, npm audit)
 
 ## Debugging Tools

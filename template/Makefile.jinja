@@ -1,0 +1,67 @@
+.PHONY: help dev install build test lint format docker-build docker-up docker-down docker-logs docker-shell clean clean-all
+
+# Default target
+help:
+	@echo "Available commands:"
+	@echo "  make dev           - Start development server"
+	@echo "  make install       - Install dependencies"
+	@echo "  make build         - Build for production"
+	@echo "  make test          - Run tests"
+	@echo "  make lint          - Run linting"
+	@echo "  make format        - Format code"
+	@echo "  make docker-build  - Build Docker image"
+	@echo "  make docker-up     - Start Docker containers"
+	@echo "  make docker-down   - Stop Docker containers"
+	@echo "  make docker-logs   - View Docker logs"
+	@echo "  make docker-shell  - Shell into frontend container"
+	@echo "  make clean         - Clean build artifacts"
+	@echo "  make clean-all     - Clean everything including node_modules"
+
+# Development
+dev:
+	{{ package_manager }} dev
+
+install:
+	{{ package_manager }} install
+
+# Build and Test
+build:
+	{{ package_manager }} build
+
+test:
+	{{ package_manager }} test
+
+lint:
+	{{ package_manager }} lint
+
+format:
+	{{ package_manager }} format
+
+# Docker
+docker-build:
+	docker build -t {{ package_name }}:latest .
+
+docker-up:
+	docker compose up -d
+
+docker-down:
+	docker compose down
+
+docker-logs:
+	docker compose logs -f
+
+docker-shell:
+	docker compose exec frontend sh
+
+# Cleanup
+clean:
+	rm -rf dist
+	rm -rf coverage
+	rm -rf .turbo
+
+clean-all: clean
+	rm -rf node_modules
+	rm -rf pnpm-lock.yaml
+	rm -rf package-lock.json
+	rm -rf yarn.lock
+
