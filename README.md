@@ -51,13 +51,13 @@ Support for multiple package managers:
 Using `uvx` (recommended):
 ```bash
 # No installation needed - uvx runs copier directly
-uvx copier copy gh:your-org/alkeme-template-frontend my-new-app
+uvx copier copy gh:Alkeme-Insurance/alkeme-template-frontend my-new-app
 ```
 
 Or install globally:
 ```bash
 pip install copier
-copier copy gh:your-org/alkeme-template-frontend my-new-app
+copier copy gh:Alkeme-Insurance/alkeme-template-frontend my-new-app
 ```
 
 Or use local template:
@@ -490,7 +490,7 @@ Built with:
 **Ready to build something amazing?** 🚀
 
 ```bash
-uvx copier copy gh:your-org/alkeme-template-frontend my-new-app
+uvx copier copy gh:Alkeme-Insurance/alkeme-template-frontend my-new-app
 cd my-new-app
 pnpm install
 pnpm dev
