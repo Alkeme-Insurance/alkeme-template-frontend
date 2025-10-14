@@ -47,6 +47,22 @@ param maxReplicas int = 3
 @description('Container port')
 param containerPort int = 80
 
+@description('Enable Azure Front Door for global CDN and WAF')
+param enableFrontDoor bool = false
+
+@description('Azure Front Door SKU')
+@allowed([
+  'Standard_AzureFrontDoor'
+  'Premium_AzureFrontDoor'
+])
+param frontDoorSku string = 'Standard_AzureFrontDoor'
+
+@description('Custom domain name for Front Door (optional)')
+param customDomainName string = ''
+
+@description('Enable WAF for Front Door')
+param enableWaf bool = true
+
 // Generate unique names for resources
 var uniqueSuffix = uniqueString(resourceGroup().id, projectName, environmentName)
 var acrName = 'acr${replace(projectName, '-', '')}${uniqueSuffix}'
@@ -55,6 +71,7 @@ var appInsightsName = 'ai-${projectName}-${environmentName}-${uniqueSuffix}'
 var managedIdentityName = 'id-${projectName}-${environmentName}-${uniqueSuffix}'
 var containerAppEnvName = 'cae-${projectName}-${environmentName}-${uniqueSuffix}'
 var containerAppName = 'ca-${projectName}-${environmentName}'
+var frontDoorName = 'fd-${projectName}-${environmentName}-${uniqueSuffix}'
 
 // Common tags
 var commonTags = {
@@ -167,6 +184,19 @@ module containerApp 'modules/container-app.bicep' = {
   ]
 }
 
+// Azure Front Door (optional)
+module frontDoor 'modules/front-door.bicep' = if (enableFrontDoor) {
+  name: 'frontDoorDeploy'
+  params: {
+    name: frontDoorName
+    sku: frontDoorSku
+    originHostName: containerApp.outputs.fqdn
+    customDomainName: customDomainName
+    enableWaf: enableWaf
+    tags: commonTags
+  }
+}
+
 // Outputs
 @description('URL of the deployed Container App')
 output containerAppUrl string = containerApp.outputs.url
@@ -194,4 +224,16 @@ output managedIdentityClientId string = managedIdentity.outputs.clientId
 
 @description('Container App Name')
 output containerAppName string = containerApp.outputs.name
+
+@description('Front Door endpoint URL (if enabled)')
+output frontDoorUrl string = enableFrontDoor ? frontDoor.outputs.endpointUrl : ''
+
+@description('Front Door endpoint hostname (if enabled)')
+output frontDoorEndpointHostName string = enableFrontDoor ? frontDoor.outputs.endpointHostName : ''
+
+@description('Front Door profile name (if enabled)')
+output frontDoorProfileName string = enableFrontDoor ? frontDoor.outputs.profileName : ''
+
+@description('Custom domain hostname (if configured)')
+output customDomainHostName string = enableFrontDoor ? frontDoor.outputs.customDomainHostName : ''
 
