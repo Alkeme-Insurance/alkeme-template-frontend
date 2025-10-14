@@ -15,6 +15,9 @@ _envops:
   comment_start_string: "{#"
   comment_end_string: "#}"
 
+_jinja_extensions:
+  - jinja2.ext.do
+
 _skip_if_exists:
   - "*.md"
   - ".env"
@@ -27,9 +30,7 @@ _skip_if_exists:
 
 project_name:
   type: str
-  help: |
-    What is your frontend project name?
-    This will be used in documentation and the HTML title.
+  help: What is your frontend project name?
   default: "Alkeme Template Frontend"
   validator: >-
     {% if not project_name or project_name.strip() == '' %}
@@ -38,58 +39,33 @@ project_name:
 
 package_name:
   type: str
-  help: |
-    NPM package name (kebab-case recommended)
-    This will be the folder name and Docker image name.
-  placeholder: "alkeme-project"
   default: "{{ project_name | lower | replace(' ', '-') | replace('_', '-') }}"
-  validator: >-
-    {% if not (package_name | regex_search('^[a-zA-Z0-9]([a-zA-Z0-9_.-]*[a-zA-Z0-9])?$')) %}
-    {{package_name}} is not a valid package name. Names must start and end with a letter or digit and may only contain -, _, ., and alphanumeric characters.
-    {% endif %}
+  when: false
 
 project_description:
   type: str
-  help: Short description of your project
-  placeholder: "A modern React application"
-  default: "A modern React application built with Vite, TypeScript, and Tailwind CSS"
-  validator: >-
-    {% if not project_description or project_description.strip() == '' %}
-    Project description cannot be empty
-    {% endif %}
+  default: "{{ project_name }} - A modern React application built with Vite, TypeScript, and Tailwind CSS"
+  when: false
 
 owner_org:
   type: str
-  help: Owning organization or team name
-  default: "Alkeme"
+  default: "Alkeme-Insurance"
+  when: false
 
 author_name:
   type: str
-  help: Your name or organization name
-  placeholder: "Your Name"
-  default: "Intelligent Solutions Alkeme Team"
-  validator: >-
-    {% if not author_name or author_name.strip() == '' %}
-    Author name cannot be empty
-    {% endif %}
+  default: "Alkeme Team"
+  when: false
 
 author_email:
   type: str
-  help: Contact email address
-  placeholder: "email@example.com"
   default: "dev@alkeme.com"
-  validator: >-
-    {% if not author_email or author_email.strip() == '' %}
-    Author email cannot be empty
-    {% elif '@' not in author_email %}
-    Must be a valid email address
-    {% endif %}
+  when: false
 
 repository_url:
   type: str
-  help: Git repository URL (leave empty if not yet created)
-  default: ""
-  placeholder: "https://github.com/Alkeme-Insurance/{{ package_name }}"
+  default: "https://github.com/Alkeme-Insurance/{{ package_name }}"
+  when: false
 
 # ============================================================================
 # FEATURE FLAGS
@@ -97,67 +73,43 @@ repository_url:
 
 use_azure_auth:
   type: bool
-  help: |
-    Include Azure AD authentication (MSAL.js)?
-    Adds Microsoft authentication with SSO capabilities.
   default: true
+  when: false
 
 use_pwa:
   type: bool
-  help: |
-    Configure as Progressive Web App?
-    Adds service worker and manifest for offline support.
   default: false
+  when: false
 
 use_analytics:
   type: bool
-  help: |
-    Include analytics tracking setup?
-    Adds Microsoft Clarity integration for user behavior insights.
-  default: false
+  default: true
+  when: false
 
 analytics_provider:
   type: str
-  help: Choose analytics provider
-  choices:
-    - "clarity"
-    - "none"
   default: "clarity"
-  when: "{{ use_analytics }}"
+  when: false
 
 use_cursor_rules:
   type: bool
-  help: |
-    Include Cursor AI rules file (.cursorrules)?
-    Provides AI assistant with project-specific coding standards and context.
   default: true
+  when: false
 
 cursor_rules_style:
   type: str
-  help: Choose Cursor rules style/focus
-  choices:
-    - "react-typescript"
-    - "frontend-comprehensive"
-    - "minimal"
   default: "react-typescript"
-  when: "{{ use_cursor_rules }}"
+  when: false
 
 use_git_hooks:
   type: bool
-  help: |
-    Setup git hooks for secret scanning?
-    Prevents passwords, API keys, and credentials from being committed.
   default: true
+  when: false
 
 git_hook_tool:
   type: str
-  help: Choose secret scanning tool for git hooks
-  choices:
-    - "pre-commit"
-    - "detect-secrets"
-    - "custom"
   default: "pre-commit"
-  when: "{{ use_git_hooks }}"
+  when: false
 
 # ============================================================================
 # PROJECT STRUCTURE & SCAFFOLDING
@@ -166,9 +118,6 @@ git_hook_tool:
 scaffold_components:
   type: yaml
   multiselect: true
-  help: |
-    Select which component directories to scaffold in src/
-    Unselected directories won't be created in the initial project.
   choices:
     api:
       value: &api
@@ -203,27 +152,22 @@ scaffold_components:
         name: stores
         description: State management stores
   default: [*api, *auth, *components, *pages, *lib, *types, *hooks]
+  when: false
 
 include_docker:
   type: bool
-  help: |
-    Include Docker configuration?
-    Generates Dockerfile, docker-compose.yml, and nginx.conf
   default: true
+  when: false
 
 include_makefile:
   type: bool
-  help: |
-    Include Makefile for convenient Docker commands?
-    Provides make dev, make build, make deploy shortcuts
   default: true
+  when: false
 
 include_setup_script:
   type: bool
-  help: |
-    Include interactive setup script (setup-env.sh)?
-    Helps configure environment variables interactively
   default: true
+  when: false
 
 # ============================================================================
 # CI/CD CONFIGURATION
@@ -231,18 +175,13 @@ include_setup_script:
 
 ci_github_actions:
   type: bool
-  help: |
-    Add GitHub Actions CI/CD workflow?
-    Includes lint, typecheck, test, Docker build, and Azure deployment.
   default: true
+  when: false
 
 ci_include_azure_deploy:
   type: bool
-  help: |
-    Include Azure deployment steps in CI/CD?
-    Requires Azure service principal secrets in GitHub.
   default: true
-  when: "{{ ci_github_actions }}"
+  when: false
 
 # ============================================================================
 # AZURE CONFIGURATION
@@ -250,107 +189,43 @@ ci_include_azure_deploy:
 
 use_azure_deployment:
   type: bool
-  help: |
-    Generate Azure deployment infrastructure (Bicep)?
-    Creates Container Apps, ACR, and monitoring resources.
   default: true
+  when: false
 
 azure_region:
   type: str
-  help: Azure region for deployment
-  choices:
-    - "eastus"
-    - "eastus2"
-    - "westus"
-    - "westus2"
-    - "westus3"
-    - "centralus"
-    - "northcentralus"
-    - "southcentralus"
-    - "westcentralus"
-    - "canadacentral"
-    - "canadaeast"
-    - "brazilsouth"
-    - "northeurope"
-    - "westeurope"
-    - "uksouth"
-    - "ukwest"
-    - "francecentral"
-    - "germanywestcentral"
-    - "norwayeast"
-    - "switzerlandnorth"
-    - "swedencentral"
-    - "australiaeast"
-    - "australiasoutheast"
-    - "southeastasia"
-    - "eastasia"
-    - "japaneast"
-    - "japanwest"
-    - "koreacentral"
-    - "southindia"
-    - "centralindia"
-    - "westindia"
-    - "uaenorth"
-    - "southafricanorth"
   default: "eastus"
-  when: "{{ use_azure_deployment }}"
+  when: false
 
 azure_environment:
   type: str
-  help: Initial environment name (dev/staging/prod)
   default: "dev"
-  choices:
-    - "dev"
-    - "staging"
-    - "prod"
-  when: "{{ use_azure_deployment }}"
+  when: false
 
 azure_subscription_id:
   type: str
-  help: |
-    Azure subscription ID (optional, can be set later)
-    Leave empty to configure manually after generation.
   default: ""
-  placeholder: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-  when: "{{ use_azure_deployment }}"
+  when: false
 
 azure_resource_group:
   type: str
-  help: Azure resource group name
   default: "rg-{{ package_name }}-{{ azure_environment }}"
-  when: "{{ use_azure_deployment }}"
+  when: false
 
 azure_container_registry_name:
   type: str
-  help: |
-    Azure Container Registry name (alphanumeric only, globally unique)
-    Must be 5-50 characters, lowercase alphanumeric.
   default: "acr{{ package_name.replace('-', '').replace('_', '') }}{{ azure_environment }}"
-  validator: >-
-    {% if azure_container_registry_name and use_azure_deployment -%}
-    {% if not azure_container_registry_name.isalnum() or not azure_container_registry_name.islower() -%}
-    Must contain only lowercase alphanumeric characters
-    {%- elif azure_container_registry_name|length < 5 or azure_container_registry_name|length > 50 -%}
-    Must be between 5 and 50 characters
-    {%- endif %}
-    {%- endif %}
-  when: "{{ use_azure_deployment }}"
+  when: false
 
 use_azure_front_door:
   type: bool
-  help: |
-    Include Azure Front Door configuration?
-    Adds global CDN, WAF, and SSL management (additional cost).
   default: false
-  when: "{{ use_azure_deployment }}"
+  when: false
 
 use_azure_key_vault:
   type: bool
-  help: |
-    Include Azure Key Vault for secrets management?
-    Recommended for production environments.
   default: false
-  when: "{{ use_azure_deployment }}"
+  when: false
 
 # ============================================================================
 # AZURE AD (MSAL) CONFIGURATION
@@ -358,29 +233,18 @@ use_azure_key_vault:
 
 azure_tenant_id:
   type: str
-  help: |
-    Azure AD Tenant ID (optional, can be set later)
-    Used for MSAL authentication configuration.
   default: ""
-  placeholder: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-  when: "{{ use_azure_auth }}"
+  when: false
 
 azure_client_id:
   type: str
-  help: |
-    Azure AD Application (Client) ID (optional, can be set later)
-    Register your app in Azure AD first.
   default: ""
-  placeholder: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-  when: "{{ use_azure_auth }}"
+  when: false
 
 azure_api_scope:
   type: str
-  help: |
-    Azure AD API scope for backend access (optional)
-    Example: api://your-backend-app-id/access_as_user
-  default: "api://{{ azure_client_id }}/access_as_user"
-  when: "{{ use_azure_auth and azure_client_id }}"
+  default: "api://your-app-id/access_as_user"
+  when: false
 
 # ============================================================================
 # DEVELOPMENT CONFIGURATION
@@ -388,27 +252,18 @@ azure_api_scope:
 
 dev_port:
   type: int
-  help: Local development server port
   default: 5173
-  validator: >-
-    {% if dev_port < 1024 or dev_port > 65535 -%}
-    Port must be between 1024 and 65535
-    {%- endif %}
+  when: false
 
 docker_port:
   type: int
-  help: Docker host port mapping for frontend
   default: 3000
-  validator: >-
-    {% if docker_port < 1024 or docker_port > 65535 -%}
-    Port must be between 1024 and 65535
-    {%- endif %}
+  when: false
 
 api_base_url_dev:
   type: str
-  help: Backend API base URL for local development
   default: "http://localhost:8000"
-  placeholder: "http://localhost:8000"
+  when: false
 
 
 # ============================================================================
@@ -417,38 +272,18 @@ api_base_url_dev:
 
 package_manager:
   type: str
-  help: Which JavaScript package manager do you want to use?
-  choices:
-    - "npm"
-    - "pnpm"
-    - "yarn"
   default: "pnpm"
+  when: false
 
 python_version:
   type: str
-  help: |
-    Which version of Python do you want to use?
-    Used for Python tooling like pre-commit, detect-secrets, etc.
-  choices:
-    - "3.10"
-    - "3.11"
-    - "3.12"
-    - "3.13"
-  default: "3.12"
-  when: "{{ use_git_hooks }}"
+  default: "3.13"
+  when: false
 
 python_dependency_manager:
   type: str
-  help: |
-    Which Python dependency manager do you use?
-    Used for Python tooling like pre-commit, detect-secrets, etc.
-  choices:
-    - "pip"
-    - "uv"
-    - "poetry"
-    - "pipenv"
   default: "uv"
-  when: "{{ use_git_hooks }}"
+  when: false
 
 
 
