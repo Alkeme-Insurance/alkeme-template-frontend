@@ -1,179 +1,103 @@
-<!-- 6d797774-b2e4-42b6-a886-3a3bcd2248d1 5f02c9d5-9f80-4ddb-982f-2e6deefcd049 -->
-# Enhanced Template README and Division Logo
+<!-- 6d797774-b2e4-42b6-a886-3a3bcd2248d1 410ee55e-f543-42df-9971-7461feed8510 -->
+# Add ALKEME Style Guidelines to Cursor Rules
 
-## 1. Add Intelligent Solutions Division Logo
+## Overview
 
-Copy division logo to template and update documentation:
-- Copy `intelligent_solutions_logo.png` → `template/public/intelligent-solutions-logo.png`
-- Update `Logo.tsx` component to support division logo variant
-- Add division logo to logo usage documentation
-- Delete `intelligent_solutions_logo.png` from root after copying
+Create `.cursor/rules/alkeme-style-guidelines.md` to encode ALKEME Insurance brand standards for AI-assisted development, with active enforcement for all client-facing UI design.
 
-## 2. Create Comprehensive Template README
+## Content to Include
 
-Create `template/README.md.jinja` with:
+### 1. Brand Identity
 
-### Header Section
-- Project name with ALKEME branding
-- One-line description: "ALKEME Insurance Platform - Full-service insurance agency providing innovative solutions"
-- Badges (optional): Build status, License, Node version
+- Official name: ALKEME (all caps)
+- Tagline: "Insurance everything."
+- Lead message: "Shaping the future of insurance. One partner at a time."
+- Boilerplate description from brand guidelines
 
-### Quick Start Section
-```markdown
-## Quick Start
+### 2. Brand Attributes
 
-### Prerequisites
-- Node.js 20+ and npm 9+
-- Git
+- Innovative
+- Authentic
+- Creative
+- Adaptable
 
-### Installation
-```bash
-# Install dependencies
-npm install
+### 3. Voice and Tone Guidelines
 
-# Copy environment file
-cp env.example .env
+- Conversational but professional
+- Honest but not aggressive
+- Helpful but not overbearing
+- Fun but not silly
+- Informal but not sloppy
+- Short sentences (max 25 words)
+- Short paragraphs (4-5 sentences)
+- Avoid insurance jargon
+- Use humor appropriately
 
-# Update .env with your Azure AD credentials (if using authentication)
-```
+### 4. Typography
 
-### Development
-```bash
-# Start development server (http://localhost:5173)
-npm run dev
-```
+- Primary: Poppins (all weights)
+- Secondary: Open Sans (fallback)
+- Font weight usage guidelines
 
-### Build
-```bash
-# Create production build
-npm run build
+### 5. Brand Colors
 
-# Preview production build
-npm run preview
-```
+- ALKEME Yellow: #FFBF3C (PANTONE 136C)
+- Black: #000000
+- Blue: #5387AC
+- Light Blue: #91CBEF
+- Gray: #5F6060
+- Light Gray: #F0F3F5
 
-### Docker (Alternative)
-```bash
-# Using npm scripts
-npm run docker:up    # Start
-npm run docker:down  # Stop
+### 6. Content Rules
 
-# Or using make
-make up    # Start
-make down  # Stop
-make logs  # View logs
-```
-```
+- "ALKEME" always uppercase
+- No subjective enthusiasm ("great", "amazing")
+- Descriptive, specific language
+- Clear space requirements for logos
+- Minimum logo sizes
 
-### Project Description
-- Brief overview of what the platform provides
-- Key capabilities (authentication, responsive UI, production-ready)
-- ALKEME Insurance context
+### 7. Code Implementation Guidelines
 
-### Tech Stack
-- **Frontend**: React 18, TypeScript, Vite
-- **Styling**: Tailwind CSS, shadcn/ui components
-- **Authentication**: {% if use_azure_auth %}Azure AD (MSAL.js){% else %}Ready for auth integration{% endif %}
-- **State Management**: React hooks, Context API
-- **Build Tool**: Vite with Hot Module Replacement
-- **Testing**: Vitest, React Testing Library
-- **Deployment**: Docker, Azure Container Apps
+- Use brand colors in Tailwind config
+- Logo component usage patterns
+- Favor Poppins font in CSS
+- Maintain brand consistency in UI text
 
-### Project Structure
-```
-{{ package_name }}/
-├── src/
-│   ├── app/              # Application components
-│   │   ├── components/   # Reusable UI components
-│   │   └── pages/        # Page components
-│   ├── api/              # API client utilities
-│   ├── auth/             # Authentication configuration
-│   ├── lib/              # Utility functions
-│   └── styles/           # Global styles
-├── public/               # Static assets
-├── docs/                 # Documentation
-├── infra/                # Azure infrastructure (Bicep)
-└── docker/               # Docker configuration
-```
+## Critical UI Design Requirements
 
-### Available Commands
-Table of all npm scripts:
-- `npm run dev` - Development server
-- `npm run build` - Production build
-- `npm run preview` - Preview production build
-- `npm test` - Run tests
-- `npm run typecheck` - TypeScript checking
-- `npm run lint` - Lint code
-- `npm run format` - Format code
+When creating any client-facing interface, the AI assistant MUST:
 
-### Environment Configuration
-- List key environment variables
-- Point to `env.example`
-- Note Azure AD configuration if enabled
+1. **Actively Apply Brand Guidelines**: All customer-facing UI components, pages, and text must follow ALKEME brand standards
+2. **Proactive Suggestions**: Recommend brand-compliant alternatives when requests might deviate from guidelines
+3. **Scope of Enforcement**:
 
-### Azure Deployment
-- Link to `infra/README.md`
-- Quick deployment steps
-- Prerequisites
+- Customer-facing interfaces (strict adherence)
+- Marketing pages (strict adherence)
+- Public documentation (strict adherence)
+- Email templates (strict adherence)
+- User-visible components (strict adherence)
+- Internal/admin tools (more flexibility allowed)
 
-### Key Features
-- ✓ Official ALKEME branding and logos
-- ✓ {% if use_azure_auth %}Azure AD authentication{% endif %}
-- ✓ Responsive design (mobile-first)
-- ✓ Type-safe development (TypeScript)
-- ✓ Production-ready Docker setup
-- ✓ CI/CD with GitHub Actions
-- ✓ Pre-commit hooks for code quality
+4. **Voice Compliance**: All user-visible text must match ALKEME voice and tone
+5. **Visual Consistency**: Use approved colors, typography, and spacing standards
+6. **Brand Integrity**: Protect brand reputation through consistent application
 
-### Documentation
-- Link to `docs/LOGO_USAGE.md`
-- Link to brand guidelines
-- Link to Azure setup guide
+## File Location
 
-### License
-- MIT or appropriate license
+`.cursor/rules/alkeme-style-guidelines.md`
 
-## 3. Update Logo Component for Division Logo
+## Implementation
 
-Add division logo variant to `Logo.tsx`:
-```tsx
-interface LogoProps {
-  variant?: 'primary' | 'white' | 'black' | 'icon' | 'horizontal' | 'division'
-  // ...
-}
-
-const logoSrc = {
-  // ... existing
-  division: '/intelligent-solutions-logo.png'
-}
-```
-
-## 4. Update Logo Usage Documentation
-
-Add division logo section to `LOGO_USAGE.md`:
-- **`intelligent-solutions-logo.png`** - Intelligent Solutions division logo
-  - Use for division-specific branding
-  - Complements main ALKEME branding
-  - Available in PNG format
-
-## 5. Cleanup
-
-Delete from root:
-- `intelligent_solutions_logo.png`
-
-## 6. Test Generated Project
-
-Verify:
-- Template generates with complete README
-- Quick start commands work as documented
-- Division logo is present and accessible
-- README is clear and actionable for new developers
+Create new rule file with markdown formatting, organized into clear sections for easy reference by AI assistant during development. The rule should be structured to ensure active enforcement during UI creation tasks.
 
 ### To-dos
 
-- [ ] Copy intelligent_solutions_logo.png to template/public/
-- [ ] Create comprehensive template/README.md.jinja with quick start and overview
-- [ ] Add division variant to Logo component
-- [ ] Add division logo to LOGO_USAGE.md
-- [ ] Delete intelligent_solutions_logo.png from root
-- [ ] Generate test project and verify README is complete and accurate
+- [ ] Copy professional Vector SVG logos to template/public/
+- [ ] Generate favicon set from avatar PNG using image conversion
+- [ ] Add black variant to Logo component
+- [ ] Update site.webmanifest with correct PNG paths
+- [ ] Update LOGO_USAGE.md with professional assets info
+- [ ] Move brand guideline PDFs to docs/brand-assets/
+- [ ] Delete zip files, Zone.Identifier files, and extracted directories
+- [ ] Update README branding section with official asset info
+- [ ] Generate and verify test project builds correctly
