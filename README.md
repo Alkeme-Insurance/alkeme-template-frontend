@@ -31,11 +31,8 @@ A production-ready **Copier** template for generating modern React + TypeScript 
 - **TypeScript** - Full type safety
 - **Cursor Rules** - AI assistant configuration for consistent coding
 
-### Package Managers
-Support for multiple package managers:
-- **pnpm** (default) - Fast, efficient disk usage
-- **npm** - Standard Node.js package manager
-- **yarn** - Alternative package manager
+### Package Manager
+Uses npm as the standard Node.js package manager.
 
 ## 📋 Prerequisites
 
@@ -72,7 +69,6 @@ Copier will prompt you for:
 - **Package name** - NPM package name (e.g., `@company/my-app`)
 - **Description** - Brief project description
 - **Author information** - Name and email
-- **Package manager** - pnpm (default), npm, or yarn
 - **Features** - Azure Auth, PWA, Analytics (Microsoft Clarity), Git Hooks
 - **Docker** - Include Dockerfile and docker-compose.yml
 - **Project structure** - Select directories to scaffold in `src/`
@@ -81,7 +77,7 @@ Copier will prompt you for:
 
 ```bash
 cd my-new-app
-pnpm install  # or npm install / yarn install
+npm install
 ```
 
 ### 4. Set Up Environment
@@ -97,7 +93,7 @@ nano .env
 ### 5. Start Development Server
 
 ```bash
-pnpm dev
+npm run dev
 ```
 
 Visit http://localhost:3000
@@ -113,7 +109,6 @@ Visit http://localhost:3000
 | `project_description` | string | - | Brief description |
 | `author_name` | string | - | Your name |
 | `author_email` | string | - | Your email address |
-| `package_manager` | choice | `pnpm` | Package manager: pnpm, npm, yarn |
 
 ### Features
 
@@ -147,61 +142,61 @@ Visit http://localhost:3000
 
 ```bash
 # Start dev server with HMR
-pnpm dev
+npm run dev
 
 # Build for production
-pnpm build
+npm run build
 
 # Preview production build
-pnpm preview
+npm run preview
 
 # Run linting
-pnpm lint
+npm run lint
 
 # Fix linting issues
-pnpm lint:fix
+npm run lint:fix
 
 # Format code
-pnpm format
+npm run format
 
 # Check formatting
-pnpm format:check
+npm run format:check
 
 # Type check
-pnpm typecheck
+npm run typecheck
 ```
 
 ### Testing
 
 ```bash
 # Run unit tests
-pnpm test
+npm test
 
 # Run tests in watch mode
-pnpm test:watch
+npm run test:watch
 
 # Run tests with UI
-pnpm test:ui
+npm run test:ui
 
 # Generate coverage report
-pnpm test:coverage
+npm run test:coverage
 ```
 
 ### Docker
 
 ```bash
 # Build Docker image
-pnpm docker:build
+npm run docker:build
 # or
 docker build -t my-app:latest .
 
 # Run with Docker Compose
-pnpm docker:up
+npm run docker:up
 # or
 docker compose up --build
 
 # Stop services
-pnpm docker:down
+npm run docker:down
 # or
 docker compose down
 
@@ -218,7 +213,7 @@ If you enabled the Makefile option, you can use convenient shortcuts:
 
 ```bash
 # Development
-make dev           # Start dev server (pnpm dev)
+make dev           # Start dev server (npm run dev)
 make install       # Install dependencies
 
 # Build and Test
@@ -388,13 +383,13 @@ Deploy to:
 
 ```bash
 # Run once
-pnpm test
+npm test
 
 # Watch mode
-pnpm test:watch
+npm run test:watch
 
 # Coverage
-pnpm test:coverage
+npm run test:coverage
 ```
 
 ## 📚 Documentation
@@ -449,7 +444,7 @@ uvx copier copy . /tmp/test --trust
 **Port already in use:**
 ```bash
 # Change port in vite.config.ts or use different port
-pnpm dev --port 3001
+npm run dev -- --port 3001
 ```
 
 **Docker build fails:**
@@ -462,7 +457,7 @@ docker compose build --no-cache
 **Type errors:**
 ```bash
 # Regenerate types
-pnpm typecheck
+npm run typecheck
 ```
 
 ## 📄 License
@@ -492,7 +487,7 @@ Built with:
 ```bash
 uvx copier copy gh:Alkeme-Insurance/alkeme-template-frontend my-new-app
 cd my-new-app
-pnpm install
-pnpm dev
+npm install
+npm run dev
 ```
 

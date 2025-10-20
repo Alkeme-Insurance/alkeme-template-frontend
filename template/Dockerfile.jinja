@@ -6,34 +6,17 @@ FROM node:20-alpine AS build
 
 WORKDIR /app
 
-# Enable Corepack for pnpm/yarn support
-RUN corepack enable
-
 # Copy package files
-COPY package.json pnpm-lock.yaml* yarn.lock* package-lock.json* ./
+COPY package.json package-lock.json* ./
 
-# Install dependencies (auto-detect package manager)
-RUN if [ -f pnpm-lock.yaml ]; then \
-      pnpm install --frozen-lockfile; \
-    elif [ -f yarn.lock ]; then \
-      yarn install --frozen-lockfile; \
-    elif [ -f package-lock.json ]; then \
-      npm ci; \
-    else \
-      npm install; \
-    fi
+# Install dependencies
+RUN npm ci --prefer-offline || npm install
 
 # Copy source code
 COPY . .
 
 # Build production bundle
-RUN if [ -f pnpm-lock.yaml ]; then \
-      pnpm build; \
-    elif [ -f yarn.lock ]; then \
-      yarn build; \
-    else \
-      npm run build; \
-    fi
+RUN npm run build
 
 # --- Runtime stage ---
 FROM nginx:1.27-alpine AS runtime

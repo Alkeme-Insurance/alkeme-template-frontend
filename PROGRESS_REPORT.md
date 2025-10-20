@@ -70,7 +70,7 @@
 
 ### Multi-Stage Dockerfile
 - ✅ Dockerfile.jinja - Node build + Nginx runtime
-- ✅ Auto-detects package manager (pnpm/yarn/npm)
+- ✅ Uses npm for package management
 - ✅ Frozen lockfile installation
 - ✅ Production build
 - ✅ Healthcheck endpoint
@@ -336,8 +336,8 @@ uvx copier copy alkeme-template-frontend my-app --trust --skip-tasks
 
 # Install and run
 cd my-app
-pnpm install
-pnpm dev  # Development
+npm install
+npm run dev  # Development
 # OR
 docker compose up --build  # Production-like
 ```

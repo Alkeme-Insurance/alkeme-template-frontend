@@ -73,7 +73,7 @@
   },
   "engines": {
     "node": ">=20.0.0",
-    "{% if package_manager == 'pnpm' %}pnpm{% elif package_manager == 'yarn' %}yarn{% else %}npm{% endif %}": ">=9.0.0"
+    "npm": ">=9.0.0"
   },
-  "packageManager": "{% if package_manager == 'pnpm' %}pnpm@9.12.3{% elif package_manager == 'yarn' %}yarn@4.5.1{% else %}npm@10.9.0{% endif %}"
+  "packageManager": "npm@10.9.0"
 }

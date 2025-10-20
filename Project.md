@@ -65,8 +65,7 @@ ci_github_actions:
 # Post-gen init
 _tasks:
   - "git init -q"
-  - "corepack enable || true"
-  - "pnpm i || npm i || yarn"
+  - "npm install"
   - "git add ."
   - "git commit -m 'chore: scaffold {{ package_name }} via Copier'"
 
@@ -108,11 +107,10 @@ Output structure
 FROM node:20-alpine AS build
 WORKDIR /app
 ENV CI=true
-COPY package.json pnpm-lock.yaml* yarn.lock* package-lock.json* ./
-RUN corepack enable || true
-RUN (pnpm i || npm i || yarn) --frozen-lockfile || (pnpm i || npm i || yarn)
+COPY package.json package-lock.json* ./
+RUN npm ci --prefer-offline || npm install
 COPY . .
-RUN pnpm build || npm run build || yarn build
+RUN npm run build
 
 # --- Runtime stage ---
 FROM nginx:1.27-alpine AS runtime
@@ -418,12 +416,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
-          cache: 'pnpm'
-      - run: corepack enable
-      - run: pnpm i
-      - run: pnpm lint
-      - run: pnpm typecheck
-      - run: pnpm test
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
 
   docker:
     if: ${{ github.event_name == 'push' }}
@@ -434,10 +431,10 @@ jobs:
 
 🏎 Quick commands
 # local dev
-pnpm dev
+npm run dev
 
 # build prod
-pnpm build
+npm run build
 
 # docker (prod-like)
 cp .env.example .env

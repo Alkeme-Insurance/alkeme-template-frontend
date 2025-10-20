@@ -352,13 +352,13 @@ uvx copier copy gh:alkeme/alkeme-template-frontend my-project
 ### Install Dependencies
 ```bash
 cd my-project
-pnpm install  # or npm install / yarn install
+npm install
 ```
 
 ### Development
 ```bash
 # Start dev server
-pnpm dev
+npm run dev
 
 # Open http://localhost:5173
 ```
@@ -366,10 +366,10 @@ pnpm dev
 ### Build
 ```bash
 # Production build
-pnpm build
+npm run build
 
 # Preview build
-pnpm preview
+npm run preview
 ```
 
 ### Docker
@@ -413,7 +413,7 @@ docker compose up --build
 **⏳ IN PROGRESS:** Linting configuration  
 **📋 TODO:** Azure deployment, full component library
 
-**Template is now fully functional** - you can run `pnpm dev` and see the application!
+**Template is now fully functional** - you can run `npm run dev` and see the application!
 
 ---
 

@@ -37,7 +37,7 @@ git init
 **Content:** Define template questions and configuration
 - Template version: 9.2+
 - Questions: project_name, package_name, owner_org, feature flags
-- Post-generation tasks: git init, pnpm install, initial commit
+- Post-generation tasks: git init, npm install, initial commit
 - Subdirectory: template/
 
 **Key Fields:**
@@ -205,7 +205,7 @@ export const loginRequest = {
 **Stages:**
 1. **Build Stage** (node:20-alpine)
    - Copy package files
-   - Install dependencies (pnpm/npm/yarn)
+   - Install dependencies with npm
    - Copy source code
    - Build production bundle
 
@@ -436,7 +436,7 @@ param apiBaseUrl = 'https://api.yourdomain.com'
 - Runs on: ubuntu-latest
 - Steps:
   - Checkout code
-  - Setup Node.js (LTS, pnpm cache)
+  - Setup Node.js (LTS, npm cache)
   - Install dependencies
   - Run lint
   - Run typecheck

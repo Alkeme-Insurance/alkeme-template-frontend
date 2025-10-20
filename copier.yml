@@ -267,13 +267,8 @@ api_base_url_dev:
 
 
 # ============================================================================
-# PACKAGE MANAGER
+# PYTHON CONFIGURATION
 # ============================================================================
-
-package_manager:
-  type: str
-  default: "pnpm"
-  when: false
 
 python_version:
   type: str
@@ -296,19 +291,8 @@ _tasks:
   - command: '[ ! -d .git ] && git init -q || true'
     when: true
 
-  # Enable Corepack for pnpm/yarn
-  - command: corepack enable || true
-    when: "{{ package_manager in ['pnpm', 'yarn'] }}"
-
-  # Install dependencies based on package manager
-  - command: |
-      {% if package_manager == 'pnpm' %}
-      pnpm install
-      {% elif package_manager == 'yarn' %}
-      yarn install
-      {% else %}
-      npm install
-      {% endif %}
+  # Install dependencies
+  - command: npm install
 
   # Setup git hooks for secret scanning
   - command: |
@@ -358,19 +342,9 @@ _tasks:
     echo "🚀 Next steps:"
     echo ""
     echo "  1. cd {{ package_name }}"
-    {% if package_manager == 'pnpm' %}
-    echo "  2. pnpm dev          # Start development server"
-    echo "  3. pnpm test         # Run tests"
-    echo "  4. pnpm docker:up    # Run with Docker"
-    {% elif package_manager == 'yarn' %}
-    echo "  2. yarn dev          # Start development server"
-    echo "  3. yarn test         # Run tests"
-    echo "  4. yarn docker:up    # Run with Docker"
-    {% else %}
     echo "  2. npm run dev       # Start development server"
     echo "  3. npm test          # Run tests"
     echo "  4. npm run docker:up # Run with Docker"
-    {% endif %}
     {% if use_azure_deployment %}
     echo ""
     echo "☁️  Azure deployment:"

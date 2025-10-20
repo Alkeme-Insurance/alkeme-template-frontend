@@ -31,7 +31,7 @@ template/
 **Features:**
 - ✅ Build stage: Node.js 20 Alpine
 - ✅ Runtime stage: Nginx 1.27 Alpine
-- ✅ Auto-detects package manager (pnpm/yarn/npm)
+- ✅ Uses npm for package management
 - ✅ Frozen lockfile installation for reproducibility
 - ✅ Production Vite build
 - ✅ Health check endpoint at `/health`
