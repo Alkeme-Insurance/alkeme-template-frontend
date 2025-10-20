@@ -37,27 +37,27 @@ repos:
             .*\.webp
           )$
 
-  # ESLint for JavaScript/TypeScript
-  - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v8.57.0
+  # ESLint for JavaScript/TypeScript (using local installation)
+  - repo: local
     hooks:
       - id: eslint
+        name: ESLint
+        entry: npm run lint -- --fix --max-warnings=0
+        language: system
+        types: [file]
         files: \.(js|jsx|ts|tsx)$
-        args: ['--fix', '--max-warnings=0']
-        additional_dependencies:
-          - eslint@8.57.0
-          - '@typescript-eslint/parser@7.18.0'
-          - '@typescript-eslint/eslint-plugin@7.18.0'
-          - eslint-plugin-react-hooks@4.6.2
-          - eslint-plugin-react-refresh@0.4.9
+        pass_filenames: false
 
-  # Prettier for code formatting
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.1.0
+  # Prettier for code formatting (using local installation)
+  - repo: local
     hooks:
       - id: prettier
+        name: Prettier
+        entry: npm run format
+        language: system
+        types: [file]
         files: \.(js|jsx|ts|tsx|json|css|md|html)$
-        args: ['--write', '--ignore-unknown']
+        pass_filenames: false
 
   # TypeScript type checking
   - repo: local
