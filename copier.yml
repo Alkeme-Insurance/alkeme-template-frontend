@@ -31,7 +31,7 @@ _skip_if_exists:
 project_name:
   type: str
   help: What is your frontend project name?
-  default: "Alkeme Template Frontend"
+  default: "ALKEME Insurance Platform"
   validator: >-
     {% if not project_name or project_name.strip() == '' %}
     Project name cannot be empty
@@ -44,7 +44,7 @@ package_name:
 
 project_description:
   type: str
-  default: "{{ project_name }} - A modern React application built with Vite, TypeScript, and Tailwind CSS"
+  default: "ALKEME Insurance Platform - Full-service insurance agency providing innovative solutions"
   when: false
 
 owner_org:
@@ -54,7 +54,7 @@ owner_org:
 
 author_name:
   type: str
-  default: "Alkeme Team"
+  default: "ALKEME Insurance"
   when: false
 
 author_email:
