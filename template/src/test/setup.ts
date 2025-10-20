@@ -1,11 +1,7 @@
-import { afterEach, vi } from 'vitest'
-import { cleanup } from '@testing-library/react'
+import { vi } from 'vitest'
 import '@testing-library/jest-dom'
 
-// Cleanup after each test
-afterEach(() => {
-  cleanup()
-})
+// Cleanup is automatic with vitest
 
 // Mock window.__ENV__
 (globalThis as any).window = {
