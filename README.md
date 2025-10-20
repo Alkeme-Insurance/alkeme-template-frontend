@@ -1,6 +1,6 @@
-# Alkeme Frontend Template
+# ALKEME Insurance Frontend Template
 
-A production-ready **Copier** template for generating modern React + TypeScript frontend applications with Docker containerization, Azure AD authentication, and best practices built-in.
+A production-ready **Copier** template for generating modern React + TypeScript frontend applications with Docker containerization, Azure AD authentication, and ALKEME Insurance branding built-in.
 
 ## 🚀 Features
 
@@ -31,8 +31,10 @@ A production-ready **Copier** template for generating modern React + TypeScript 
 - **TypeScript** - Full type safety
 - **Cursor Rules** - AI assistant configuration for consistent coding
 
-### Package Manager
-Uses npm as the standard Node.js package manager.
+### Package Manager & Branding
+- Uses **npm** as the standard Node.js package manager (no pnpm/yarn)
+- Pre-configured with **ALKEME Insurance** branding and colors
+- Generates fully functional, production-ready applications out of the box
 
 ## 📋 Prerequisites
 
@@ -65,13 +67,14 @@ uvx copier copy /path/to/alkeme-template-frontend my-new-app
 ### 2. Answer Configuration Questions
 
 Copier will prompt you for:
-- **Project name** - Your project identifier (e.g., `my-app`)
-- **Package name** - NPM package name (e.g., `@company/my-app`)
-- **Description** - Brief project description
-- **Author information** - Name and email
-- **Features** - Azure Auth, PWA, Analytics (Microsoft Clarity), Git Hooks
-- **Docker** - Include Dockerfile and docker-compose.yml
-- **Project structure** - Select directories to scaffold in `src/`
+- **Project name** - Your project identifier (defaults to "ALKEME Insurance Platform")
+- All other settings use optimized defaults:
+  - npm package manager
+  - ALKEME Insurance branding
+  - Azure Auth enabled
+  - Docker configuration included
+  - Git hooks with pre-commit enabled
+  - Full project structure scaffolded
 
 ### 3. Navigate and Install Dependencies
 
@@ -96,7 +99,15 @@ nano .env
 npm run dev
 ```
 
-Visit http://localhost:3000
+Visit http://localhost:5173 (Vite dev server)
+
+### 6. Or Run with Docker
+
+```bash
+npm run docker:up
+```
+
+Visit http://localhost:3000 (Docker/Nginx)
 
 ## 📦 Template Options
 
@@ -104,11 +115,116 @@ Visit http://localhost:3000
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `project_name` | string | - | Project identifier (kebab-case) |
-| `package_name` | string | - | NPM package name |
-| `project_description` | string | - | Brief description |
-| `author_name` | string | - | Your name |
-| `author_email` | string | - | Your email address |
+| `project_name` | string | "ALKEME Insurance Platform" | Project identifier |
+| `package_name` | string | (auto-generated) | NPM package name from project_name |
+| `project_description` | string | "ALKEME Insurance Platform..." | Auto-generated description |
+| `author_name` | string | "ALKEME Insurance" | Company name |
+| `author_email` | string | "dev@alkeme.com" | Contact email |
+
+### ALKEME Branding
+
+The template includes pre-configured ALKEME Insurance branding:
+- **Header**: "ALKEME Insurance Smart Solutions" with tagline "Insurance everything."
+- **Hero Message**: "Shaping the future of insurance"
+- **Brand Colors**: ALKEME yellow (#FFBF3C), blue (#5387AC), and full color palette
+- **Typography**: Poppins font family (ALKEME brand font)
+- **Values**: Innovative, Authentic, Creative feature cards
+- **Footer**: Copyright and "Shaping the future of insurance. One partner at a time."
+
+### 🎨 ALKEME Branding Assets
+
+The template includes professional ALKEME branding resources:
+
+#### Logo Files (`public/`) - Official Marketing Assets
+- **`alkeme-logo.svg`** - Full color logo (primary for light backgrounds)
+- **`alkeme-logo-white.svg`** - All-white version (for dark backgrounds)
+- **`alkeme-logo-black.svg`** - All-black version (for monochrome/print)
+- **`alkeme-logo-horizontal.svg`** - Full branding with tagline
+- **`alkeme-logo-icon.png`** - Official ALKEME avatar (transparent)
+- **`alkeme-logo-icon-yellow.png`** - Avatar with yellow background
+
+**Note**: All logos are official ALKEME marketing assets from the brand guidelines team.
+
+#### Favicon Set (`public/`) - Generated from Official Avatar
+- PNG formats (16x16, 32x32, 192x192, 512x512) from official ALKEME avatar
+- Apple Touch Icon (180x180) with yellow background
+- Web manifest for PWA support
+- Multiple size variants for optimal display across devices
+
+#### Banners (`public/banners/`)
+- **`hero-banner.svg`** - Hero banner with full branding
+- **`og-image.png`** - Open Graph/social sharing image (1200x630)
+- **`email-banner.png`** - Email header banner (600x200)
+
+#### Logo Component
+
+Use the reusable React component:
+
+```tsx
+import { Logo } from '@/app/components/Logo'
+
+// Primary logo (default)
+<Logo />
+
+// Variants
+<Logo variant="white" />       // White logo for dark backgrounds
+<Logo variant="black" />       // Black logo for monochrome
+<Logo variant="icon" />        // Official avatar icon
+<Logo variant="horizontal" />  // With tagline
+
+// Sizes
+<Logo size="sm" />  // h-8 (32px)
+<Logo size="md" />  // h-12 (48px) - default
+<Logo size="lg" />  // h-16 (64px)
+<Logo size="xl" />  // h-24 (96px)
+
+// Custom styling
+<Logo className="opacity-80 hover:opacity-100" />
+```
+
+#### Direct Image Usage
+
+```tsx
+<img 
+  src="/alkeme-logo.svg" 
+  alt="ALKEME Insurance" 
+  className="h-12 w-auto"
+/>
+```
+
+#### Brand Colors in Tailwind
+
+```typescript
+// Available in tailwind.config.js
+colors: {
+  alkeme: {
+    yellow: '#FFBF3C',      // Primary brand color
+    black: '#000000',       // Text and logo
+    blue: '#5387AC',        // Secondary
+    'light-blue': '#91CBEF', // Accent
+    gray: '#5F6060',        // Supporting
+    'light-gray': '#F0F3F5', // Backgrounds
+  }
+}
+```
+
+#### Logo Usage Guidelines
+
+See `docs/LOGO_USAGE.md` for detailed guidelines on:
+- Size requirements and minimum dimensions
+- Clear space rules
+- Color usage on different backgrounds
+- Incorrect usage examples
+- Accessibility best practices
+
+#### Brand Guidelines
+
+Complete brand guidelines are available in `docs/brand-assets/`:
+- **ALKEME-BrandGuidelines_04102024.pdf** - Official brand guidelines
+- **ALKEME Social Media, Public Relations, and Media Guidelines.pdf** - Social media usage
+- **alkeme-arrow.pdf** - Arrow symbol specifications
+
+All logo assets are official ALKEME marketing materials.
 
 ### Features
 
@@ -118,7 +234,7 @@ Visit http://localhost:3000
 | `use_pwa` | ✗ | Progressive Web App with service worker |
 | `use_analytics` | ✓ | Microsoft Clarity analytics integration |
 | `use_git_hooks` | ✓ | Pre-commit hooks for code quality |
-| `git_hook_tool` | `detect-secrets` | Secret scanning tool |
+| `git_hook_tool` | `pre-commit` | Git hooks tool |
 
 ### Project Structure
 
@@ -482,12 +598,37 @@ Built with:
 
 ---
 
-**Ready to build something amazing?** 🚀
+**Ready to build with ALKEME?** 🚀
 
 ```bash
+# Generate a new ALKEME Insurance project
 uvx copier copy gh:Alkeme-Insurance/alkeme-template-frontend my-new-app
 cd my-new-app
-npm install
-npm run dev
+
+# Already includes ALKEME branding and npm dependencies installed!
+npm run dev          # Start development server
+# or
+npm run docker:up    # Run with Docker
+
+# Build for production
+npm run build        # Creates optimized bundle
+npm run typecheck    # TypeScript validation
 ```
+
+## 🎨 What's Included
+
+Every generated project includes:
+- ✅ **ALKEME Insurance** branding and colors
+- ✅ **npm** as package manager (no pnpm/yarn complexity)
+- ✅ **TypeScript** - Full type safety
+- ✅ **Tailwind CSS** - With ALKEME brand colors pre-configured
+- ✅ **React 18** - Latest React with hooks
+- ✅ **Vite** - Fast build tool with HMR
+- ✅ **Docker** - Multi-stage Dockerfile with Nginx
+- ✅ **Azure AD** - MSAL authentication ready
+- ✅ **Tests** - Vitest configuration
+- ✅ **Linting** - ESLint + Prettier
+- ✅ **Git Hooks** - Pre-commit with secret scanning
+- ✅ **CI/CD** - GitHub Actions workflows
+- ✅ **Azure IaC** - Bicep infrastructure templates
 

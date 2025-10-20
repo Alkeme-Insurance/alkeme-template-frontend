@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- ALKEME Logo Icon - For small spaces and favicons -->
+  
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="48" fill="#FFBF3C"/>
+  <circle cx="50" cy="50" r="45" fill="#FFFFFF"/>
+  
+  <!-- Letter A -->
+  <text x="50" y="65" font-family="Poppins, Arial, sans-serif" font-size="48" font-weight="700" fill="#000000" text-anchor="middle">
+    A
+  </text>
+  
+  <!-- Growth Arrow Symbol -->
+  <g transform="translate(65, 25) scale(0.6)">
+    <path d="M 0 20 L 15 5 L 30 15 L 20 15 L 20 30 L 10 30 L 10 15 Z" fill="#FFBF3C"/>
+  </g>
+</svg>
+
