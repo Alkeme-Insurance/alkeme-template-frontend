@@ -1,5 +1,5 @@
 interface LogoProps {
-  variant?: 'primary' | 'white' | 'black' | 'icon' | 'horizontal'
+  variant?: 'primary' | 'white' | 'black' | 'icon' | 'horizontal' | 'division'
   size?: 'sm' | 'md' | 'lg' | 'xl'
   className?: string
 }
@@ -21,7 +21,8 @@ export function Logo({
     white: '/alkeme-logo-white.svg',
     black: '/alkeme-logo-black.svg',
     icon: '/alkeme-logo-icon.png',
-    horizontal: '/alkeme-logo-horizontal.svg'
+    horizontal: '/alkeme-logo-horizontal.svg',
+    division: '/intelligent-solutions-logo.png'
   }
   
   return (

@@ -36,6 +36,12 @@ The template includes official ALKEME marketing assets from the brand guidelines
   - Official marketing asset from Avatar collection
   - Available in multiple background variants
 
+- **`intelligent-solutions-logo.png`** - Intelligent Solutions division logo
+  - Use for division-specific branding
+  - Complements main ALKEME branding
+  - Available in PNG format
+  - Use when highlighting Intelligent Solutions division
+
 ### Banners
 
 - **`banners/hero-banner.svg`** - Hero banner with full branding
@@ -64,6 +70,9 @@ import { Logo } from '@/app/components/Logo'
 
 // Horizontal with tagline
 <Logo variant="horizontal" />
+
+// Intelligent Solutions division logo
+<Logo variant="division" />
 
 // Different sizes
 <Logo size="sm" />  // h-8 (32px)
@@ -243,6 +252,14 @@ Use the white logo (`alkeme-logo-white.svg`):
 <nav className="md:hidden">
   <Logo variant="icon" size="sm" />
 </nav>
+```
+
+### Division Branding
+```tsx
+<div className="division-section">
+  <Logo variant="division" size="md" />
+  <h2>Intelligent Solutions</h2>
+</div>
 ```
 
 ## Brand Colors Reference

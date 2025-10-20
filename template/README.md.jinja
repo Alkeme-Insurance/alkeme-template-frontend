@@ -1,1 +1,393 @@
 # {{ project_name }}
+
+> **ALKEME Insurance Platform** - Full-service insurance agency providing innovative solutions
+
+Modern React + TypeScript frontend with official ALKEME branding, built with Vite for optimal development experience and production performance.
+
+---
+
+## Quick Start
+
+### Prerequisites
+
+- **Node.js** 20+ and **npm** 9+
+- **Git** for version control
+{% if use_azure_auth -%}
+- **Azure AD** application registration (for authentication)
+{% endif -%}
+
+### Installation
+
+```bash
+# Install dependencies
+npm install
+
+# Copy environment configuration
+cp env.example .env
+
+{% if use_azure_auth -%}
+# Update .env with your Azure AD credentials
+# - APP_AZURE_CLIENT_ID: Your Azure AD application client ID
+# - APP_AZURE_TENANT_ID: Your Azure AD tenant ID
+{% endif -%}
+```
+
+### Development
+
+```bash
+# Start development server with Hot Module Replacement
+npm run dev
+
+# Application will be available at http://localhost:5173
+```
+
+### Build for Production
+
+```bash
+# Create optimized production build
+npm run build
+
+# Preview production build locally
+npm run preview
+```
+
+### Docker (Alternative Development)
+
+```bash
+# Using npm scripts
+npm run docker:up      # Start containers
+npm run docker:down    # Stop containers
+npm run docker:logs    # View logs
+
+# Or using Makefile shortcuts
+make up      # Start
+make down    # Stop
+make logs    # View logs
+make shell   # Access container shell
+```
+
+---
+
+## About This Project
+
+{{ project_description }}
+
+This application is built with modern web technologies and follows ALKEME's brand guidelines. It provides a solid foundation for building insurance platform features with:
+
+- **Enterprise Authentication**{% if use_azure_auth %} via Azure AD (MSAL.js){% endif %}
+- **Responsive Design** optimized for desktop, tablet, and mobile
+- **Type Safety** with full TypeScript coverage
+- **Production Ready** with Docker containerization and Azure deployment scripts
+- **Official Branding** with ALKEME logos and design system
+
+---
+
+## Tech Stack
+
+### Core Technologies
+
+- **React 18** - Modern UI library with hooks and concurrent features
+- **TypeScript** - Type-safe development with full IDE support
+- **Vite** - Lightning-fast build tool with Hot Module Replacement (HMR)
+- **Tailwind CSS** - Utility-first CSS framework for rapid UI development
+- **shadcn/ui** - High-quality, accessible component library
+
+### Development Tools
+
+{% if use_azure_auth -%}
+- **Azure AD (MSAL.js)** - Enterprise-grade authentication
+{% endif -%}
+- **React Router** - Client-side routing
+- **Vitest** - Fast unit testing with Vite integration
+- **React Testing Library** - Component testing best practices
+- **ESLint** - Code linting with TypeScript support
+- **Prettier** - Automatic code formatting
+
+### Infrastructure
+
+- **Docker** - Containerization for consistent environments
+- **Nginx** - Production web server
+- **Azure Container Apps** - Serverless container hosting
+- **GitHub Actions** - CI/CD pipeline for automated testing and deployment
+
+---
+
+## Project Structure
+
+```
+{{ package_name }}/
+├── src/
+│   ├── app/
+│   │   ├── components/      # Reusable UI components (Logo, etc.)
+│   │   ├── pages/           # Page components (HomePage, LoginPage)
+│   │   └── App.tsx          # Root application component
+│   ├── api/                 # API client utilities
+{% if use_azure_auth -%}
+│   ├── auth/                # Azure AD authentication configuration
+{% endif -%}
+│   ├── lib/                 # Utility functions and helpers
+│   ├── styles/              # Global styles and Tailwind configuration
+│   ├── test/                # Test setup and utilities
+│   └── main.tsx             # Application entry point
+├── public/                  # Static assets (logos, favicons, etc.)
+├── docs/                    # Documentation
+│   ├── brand-assets/        # Official ALKEME brand guidelines (PDFs)
+│   └── LOGO_USAGE.md        # Logo usage guidelines and examples
+{% if include_docker -%}
+├── docker/                  # Docker configuration files
+│   ├── nginx.conf           # Nginx web server configuration
+│   └── entrypoint.sh        # Container startup script
+├── Dockerfile               # Multi-stage Docker build
+├── docker-compose.yml       # Local development orchestration
+{% endif -%}
+├── infra/                   # Azure infrastructure as code (Bicep)
+│   ├── main.bicep           # Main infrastructure definition
+│   ├── main.bicepparam      # Infrastructure parameters
+│   └── modules/             # Reusable Bicep modules
+├── .github/                 # GitHub Actions workflows
+│   └── workflows/
+│       └── ci-cd.yml        # Automated CI/CD pipeline
+├── vite.config.ts           # Vite build configuration
+├── tailwind.config.js       # Tailwind CSS configuration
+├── tsconfig.json            # TypeScript configuration
+└── package.json             # Dependencies and scripts
+```
+
+---
+
+## Available Commands
+
+### Development
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server at http://localhost:5173 |
+| `npm run build` | Create production build in `dist/` directory |
+| `npm run preview` | Preview production build locally |
+
+### Code Quality
+
+| Command | Description |
+|---------|-------------|
+| `npm run typecheck` | Run TypeScript type checking |
+| `npm run lint` | Lint code with ESLint |
+| `npm run format` | Format code with Prettier |
+| `npm test` | Run unit tests with Vitest |
+| `npm run test:ui` | Run tests with interactive UI |
+| `npm run test:coverage` | Generate test coverage report |
+
+{% if include_docker -%}
+### Docker
+
+| Command | Description |
+|---------|-------------|
+| `npm run docker:build` | Build Docker image |
+| `npm run docker:up` | Start containers in background |
+| `npm run docker:down` | Stop and remove containers |
+| `npm run docker:logs` | View container logs |
+
+{% endif -%}
+---
+
+## Environment Configuration
+
+The application uses environment variables for configuration. Copy `env.example` to `.env` and update with your values:
+
+### Core Configuration
+
+```bash
+# Application
+APP_NAME="{{ project_name }}"
+APP_ENV=development
+
+{% if use_azure_auth -%}
+# Azure AD Authentication
+APP_AZURE_CLIENT_ID=your-client-id-here
+APP_AZURE_TENANT_ID=your-tenant-id-here
+APP_AZURE_REDIRECT_URI=http://localhost:5173
+
+{% endif -%}
+# API Configuration (if connecting to backend)
+APP_API_BASE_URL=http://localhost:8000
+```
+
+{% if use_azure_auth -%}
+### Azure AD Setup
+
+1. Register an application in Azure AD
+2. Configure redirect URIs (SPA type)
+3. Add API permissions if needed
+4. Copy Application (client) ID and Directory (tenant) ID to `.env`
+
+See `.github/AZURE_SETUP.md` for detailed instructions.
+
+{% endif -%}
+---
+
+## Key Features
+
+- ✓ **Official ALKEME Branding** - Professional logos, colors, and typography
+- ✓ **Intelligent Solutions Division** - Division-specific branding available
+{% if use_azure_auth -%}
+- ✓ **Azure AD Authentication** - Enterprise SSO with Microsoft accounts
+{% endif -%}
+- ✓ **Responsive Design** - Mobile-first approach, works on all devices
+- ✓ **Type-Safe Development** - Full TypeScript coverage with strict mode
+- ✓ **Modern UI Components** - Built with Tailwind CSS and shadcn/ui
+- ✓ **Fast Development** - Vite HMR for instant feedback
+{% if include_docker -%}
+- ✓ **Docker Ready** - Containerized for consistent deployments
+{% endif -%}
+- ✓ **CI/CD Pipeline** - Automated testing and deployment with GitHub Actions
+{% if use_git_hooks -%}
+- ✓ **Code Quality Gates** - Pre-commit hooks prevent bad code from being committed
+{% endif -%}
+- ✓ **Azure Deployment** - Infrastructure as code with Bicep templates
+
+---
+
+## Deployment
+
+### Azure Container Apps (Recommended)
+
+```bash
+# Navigate to infrastructure directory
+cd infra
+
+# Review and update parameters
+nano main.bicepparam
+
+# Deploy to Azure
+./deploy.sh
+```
+
+See `infra/README.md` for detailed deployment instructions and prerequisites.
+
+### Docker Build
+
+```bash
+# Build production image
+docker build -t {{ package_name }}:latest .
+
+# Run container
+docker run -p 3000:80 {{ package_name }}:latest
+```
+
+---
+
+## Documentation
+
+- **Logo Usage** - See `docs/LOGO_USAGE.md` for logo guidelines and code examples
+- **Brand Guidelines** - Official ALKEME brand assets in `docs/brand-assets/`
+{% if use_azure_auth -%}
+- **Azure Setup** - See `.github/AZURE_SETUP.md` for authentication configuration
+{% endif -%}
+- **Infrastructure** - See `infra/README.md` for deployment documentation
+
+---
+
+## ALKEME Branding
+
+This project includes official ALKEME Insurance marketing assets:
+
+### Available Logos
+
+```tsx
+import { Logo } from '@/app/components/Logo'
+
+// Primary logo (full color)
+<Logo variant="primary" size="md" />
+
+// White logo (for dark backgrounds)
+<Logo variant="white" size="lg" />
+
+// Black logo (for monochrome/print)
+<Logo variant="black" size="md" />
+
+// Icon/avatar only
+<Logo variant="icon" size="sm" />
+
+// Horizontal with tagline
+<Logo variant="horizontal" size="lg" />
+
+// Intelligent Solutions division logo
+<Logo variant="division" size="md" />
+```
+
+### Brand Colors
+
+```css
+/* ALKEME Yellow (Primary) */
+#FFBF3C
+
+/* ALKEME Blue (Secondary) */
+#5387AC
+
+/* ALKEME Light Blue (Accent) */
+#91CBEF
+```
+
+See `docs/brand-assets/` for complete brand guidelines.
+
+---
+
+## Testing
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode (recommended during development)
+npm run test:watch
+
+# Run tests with UI
+npm run test:ui
+
+# Generate coverage report
+npm run test:coverage
+```
+
+Tests are located in `src/test/` and alongside source files with `.test.tsx` extension.
+
+---
+
+## Contributing
+
+### Code Quality Standards
+
+- All code must pass TypeScript type checking (`npm run typecheck`)
+- Code must be linted (`npm run lint`) and formatted (`npm run format`)
+- All tests must pass (`npm test`)
+{% if use_git_hooks -%}
+- Pre-commit hooks automatically enforce these standards
+{% endif -%}
+
+### Development Workflow
+
+1. Create a feature branch: `git checkout -b feature/your-feature`
+2. Make your changes with descriptive commits
+3. Run quality checks: `npm run typecheck && npm run lint && npm test`
+4. Push and create a pull request
+5. CI/CD pipeline will automatically run all checks
+
+---
+
+## License
+
+MIT License - see LICENSE file for details
+
+---
+
+## Support
+
+For questions or issues:
+
+- **Technical Issues** - Open a GitHub issue
+- **Brand Guidelines** - See `docs/brand-assets/`
+- **ALKEME Insurance** - [Contact ALKEME](mailto:{{ author_email }})
+
+---
+
+**Built with ❤️ by ALKEME Insurance**
+
+*Shaping the future of insurance. One partner at a time.*
