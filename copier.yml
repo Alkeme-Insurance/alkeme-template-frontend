@@ -329,7 +329,7 @@ _tasks:
   - command: git add .
     when: true
 
-  - command: 'git commit -m "chore: scaffold {{ package_name }} via Copier"'
+  - command: 'SKIP=no-commit-to-branch git commit -m "chore: scaffold {{ package_name }} via Copier" || git commit --no-verify -m "chore: scaffold {{ package_name }} via Copier"'
     when: true
 
   # Success message
