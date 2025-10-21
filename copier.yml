@@ -291,6 +291,10 @@ _tasks:
   - command: '[ ! -d .git ] && git init -q || true'
     when: true
 
+  # System prerequisites check
+  - command: bash scripts/check-system.sh
+    when: true
+
   # Install dependencies
   - command: npm install
 
